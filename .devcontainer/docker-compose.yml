@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  devcontainer:
+    image: mcr.microsoft.com/devcontainers/python:3.12
+    volumes:
+      - ..:/workspaces/azimut-ha-integration:cached
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    network_mode: service:homeassistant
+    depends_on:
+      - homeassistant
+
+  homeassistant:
+    image: homeassistant/home-assistant:latest
+    ports:
+      - "8123:8123"
+    volumes:
+      - ha-config:/config
+      - ../custom_components/azimut_energy:/config/custom_components/azimut_energy:ro
+      - ./configuration.yaml:/config/configuration.yaml:ro
+      - ./automations.yaml:/config/automations.yaml
+      - ./scripts.yaml:/config/scripts.yaml
+      - ./scenes.yaml:/config/scenes.yaml
+    restart: unless-stopped
+    privileged: true
+    environment:
+      - TZ=Europe/Brussels
+
+volumes:
+  ha-config:

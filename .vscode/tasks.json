@@ -1,0 +1,55 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Restart Home Assistant",
+      "type": "shell",
+      "command": "docker restart $(docker ps -q -f name=homeassistant)",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Follow HA Logs",
+      "type": "shell",
+      "command": "docker logs -f $(docker ps -q -f name=homeassistant)",
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "label": "Check HA Config",
+      "type": "shell",
+      "command": "docker exec $(docker ps -q -f name=homeassistant) python -m homeassistant --script check_config -c /config",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Tests",
+      "type": "shell",
+      "command": "pytest",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "Run Tests with Coverage",
+      "type": "shell",
+      "command": "pytest --cov=custom_components.azimut_energy --cov-report=term-missing",
+      "problemMatcher": [],
+      "group": "test"
+    },
+    {
+      "label": "Install Test Dependencies",
+      "type": "shell",
+      "command": "pip3 install -r requirements_test.txt",
+      "problemMatcher": []
+    }
+  ]
+}

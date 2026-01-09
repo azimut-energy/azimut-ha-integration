@@ -1,0 +1,30 @@
+# Home Assistant configuration for Azimut Energy development
+
+default_config:
+
+# Enable the logger
+logger:
+  default: info
+  logs:
+    custom_components.azimut_energy: debug
+
+# Enable Home Assistant frontend
+frontend:
+  themes: !include_dir_merge_named themes
+
+# HTTP configuration
+http:
+  server_host: 0.0.0.0
+
+# Enable MQTT for testing (optional - can be configured via UI)
+# mqtt:
+#   broker: localhost
+#   port: 1883
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml

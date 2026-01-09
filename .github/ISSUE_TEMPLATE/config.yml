@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions & Support
+    url: https://github.com/azimut-energy/azimut-ha-integration/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: Home Assistant Community
+    url: https://community.home-assistant.io/
+    about: Get help from the Home Assistant community

@@ -1,0 +1,143 @@
+{
+  "config": {
+    "flow_title": "Batterie Azimut {serial}",
+    "step": {
+      "user": {
+        "title": "Connecter à la batterie Azimut",
+        "description": "Entrez les détails de connexion de votre appareil Azimut.",
+        "data": {
+          "host": "Adresse IP",
+          "serial": "Numéro de série de l'appareil"
+        },
+        "data_description": {
+          "host": "L'adresse IP de votre appareil Azimut",
+          "serial": "Le numéro de série de votre appareil Azimut (trouvé sur l'étiquette sur le côté de la batterie, ex. : 504589, 365101, 024974)"
+        }
+      },
+      "zeroconf_confirm": {
+        "title": "Batterie Azimut découverte",
+        "description": "Un nouvel appareil Azimut a été découvert.\n\n**Numéro de série :** {serial}\n**Adresse IP :** {host}\n\nVoulez-vous ajouter cet appareil ?"
+      },
+      "reconfigure": {
+        "title": "Reconfigurer la batterie Azimut",
+        "description": "Mettez à jour les paramètres de connexion pour l'appareil {serial}.",
+        "data": {
+          "host": "Adresse IP"
+        },
+        "data_description": {
+          "host": "L'adresse IP de votre appareil Azimut"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de se connecter à l'appareil. Veuillez vérifier l'adresse IP et vous assurer que l'appareil est en ligne."
+    },
+    "abort": {
+      "already_configured": "Cet appareil est déjà configuré.",
+      "reconfigure_failed": "Échec de la reconfiguration de l'intégration.",
+      "no_serial": "Impossible de déterminer le numéro de série de l'appareil depuis la découverte."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options de la batterie Azimut",
+        "description": "Mettez à jour les paramètres de connexion.",
+        "data": {
+          "host": "Adresse IP"
+        },
+        "data_description": {
+          "host": "L'adresse IP de votre appareil Azimut"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de se connecter à l'appareil. Veuillez vérifier l'adresse IP et vous assurer que l'appareil est en ligne."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_soc": {
+        "name": "État de charge de la batterie"
+      },
+      "battery_power": {
+        "name": "Puissance de la batterie"
+      },
+      "battery_voltage": {
+        "name": "Tension de la batterie"
+      },
+      "battery_capacity": {
+        "name": "Capacité de la batterie"
+      },
+      "grid_power": {
+        "name": "Puissance du réseau"
+      },
+      "grid_power_l1": {
+        "name": "Puissance du réseau L1"
+      },
+      "grid_power_l2": {
+        "name": "Puissance du réseau L2"
+      },
+      "grid_power_l3": {
+        "name": "Puissance du réseau L3"
+      },
+      "grid_voltage_l1": {
+        "name": "Tension du réseau L1"
+      },
+      "grid_voltage_l2": {
+        "name": "Tension du réseau L2"
+      },
+      "grid_voltage_l3": {
+        "name": "Tension du réseau L3"
+      },
+      "grid_energy_import": {
+        "name": "Énergie importée du réseau"
+      },
+      "grid_energy_export": {
+        "name": "Énergie exportée vers le réseau"
+      },
+      "pv_power": {
+        "name": "Puissance photovoltaïque"
+      },
+      "pv_energy": {
+        "name": "Énergie solaire totale"
+      },
+      "mppt_power": {
+        "name": "Puissance MPPT"
+      },
+      "mppt_energy": {
+        "name": "Énergie MPPT totale"
+      },
+      "inverter_power": {
+        "name": "Puissance de l'onduleur"
+      },
+      "consumption_power": {
+        "name": "Consommation totale"
+      },
+      "battery_energy_in": {
+        "name": "Énergie chargée dans la batterie"
+      },
+      "battery_energy_out": {
+        "name": "Énergie déchargée de la batterie"
+      },
+      "grid_energy_in": {
+        "name": "Énergie importée du réseau"
+      },
+      "grid_energy_out": {
+        "name": "Énergie exportée vers le réseau"
+      },
+      "reconnect_count": {
+        "name": "Nombre de reconnexions MQTT"
+      },
+      "total_messages": {
+        "name": "Messages MQTT reçus"
+      },
+      "sensor_count": {
+        "name": "Capteurs découverts"
+      }
+    }
+  }
+}
+
+
+

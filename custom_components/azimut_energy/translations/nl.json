@@ -1,0 +1,143 @@
+{
+  "config": {
+    "flow_title": "Azimut Batterij {serial}",
+    "step": {
+      "user": {
+        "title": "Verbinden met Azimut batterij",
+        "description": "Voer de verbindingsgegevens in voor uw Azimut-apparaat.",
+        "data": {
+          "host": "IP-adres",
+          "serial": "Serienummer van het apparaat"
+        },
+        "data_description": {
+          "host": "Het IP-adres van uw Azimut-apparaat",
+          "serial": "Het serienummer van uw Azimut-apparaat (te vinden op het label aan de zijkant van de batterij, bijv. 504589, 365101, 024974)"
+        }
+      },
+      "zeroconf_confirm": {
+        "title": "Azimut batterij ontdekt",
+        "description": "Een nieuw Azimut-apparaat is ontdekt.\n\n**Serienummer:** {serial}\n**IP-adres:** {host}\n\nWilt u dit apparaat toevoegen?"
+      },
+      "reconfigure": {
+        "title": "Azimut batterij opnieuw configureren",
+        "description": "Werk de verbindingsinstellingen bij voor apparaat {serial}.",
+        "data": {
+          "host": "IP-adres"
+        },
+        "data_description": {
+          "host": "Het IP-adres van uw Azimut-apparaat"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan niet verbinden met het apparaat. Controleer het IP-adres en zorg ervoor dat het apparaat online is."
+    },
+    "abort": {
+      "already_configured": "Dit apparaat is al geconfigureerd.",
+      "reconfigure_failed": "Herconfiguratie van de integratie is mislukt.",
+      "no_serial": "Kan het serienummer van het apparaat niet bepalen vanuit de ontdekking."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Azimut batterij opties",
+        "description": "Werk de verbindingsinstellingen bij.",
+        "data": {
+          "host": "IP-adres"
+        },
+        "data_description": {
+          "host": "Het IP-adres van uw Azimut-apparaat"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan niet verbinden met het apparaat. Controleer het IP-adres en zorg ervoor dat het apparaat online is."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_soc": {
+        "name": "Batterijlaadniveau"
+      },
+      "battery_power": {
+        "name": "Batterijvermogen"
+      },
+      "battery_voltage": {
+        "name": "Batterijspanning"
+      },
+      "battery_capacity": {
+        "name": "Batterijcapaciteit"
+      },
+      "grid_power": {
+        "name": "Netvermogen"
+      },
+      "grid_power_l1": {
+        "name": "Netvermogen L1"
+      },
+      "grid_power_l2": {
+        "name": "Netvermogen L2"
+      },
+      "grid_power_l3": {
+        "name": "Netvermogen L3"
+      },
+      "grid_voltage_l1": {
+        "name": "Netspanning L1"
+      },
+      "grid_voltage_l2": {
+        "name": "Netspanning L2"
+      },
+      "grid_voltage_l3": {
+        "name": "Netspanning L3"
+      },
+      "grid_energy_import": {
+        "name": "Energie-import van net"
+      },
+      "grid_energy_export": {
+        "name": "Energie-export naar net"
+      },
+      "pv_power": {
+        "name": "PV-vermogen"
+      },
+      "pv_energy": {
+        "name": "Totale zonne-energie"
+      },
+      "mppt_power": {
+        "name": "MPPT-vermogen"
+      },
+      "mppt_energy": {
+        "name": "Totale MPPT-energie"
+      },
+      "inverter_power": {
+        "name": "Omvormervermogen"
+      },
+      "consumption_power": {
+        "name": "Totaal verbruik"
+      },
+      "battery_energy_in": {
+        "name": "Batterijenergie geladen"
+      },
+      "battery_energy_out": {
+        "name": "Batterijenergie ontladen"
+      },
+      "grid_energy_in": {
+        "name": "Energie-import van net"
+      },
+      "grid_energy_out": {
+        "name": "Energie-export naar net"
+      },
+      "reconnect_count": {
+        "name": "MQTT-herverbindingen"
+      },
+      "total_messages": {
+        "name": "MQTT-berichten ontvangen"
+      },
+      "sensor_count": {
+        "name": "Ontdekte sensoren"
+      }
+    }
+  }
+}
+
+
+

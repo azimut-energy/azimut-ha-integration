@@ -1,0 +1,140 @@
+{
+  "config": {
+    "flow_title": "Azimut Battery {serial}",
+    "step": {
+      "user": {
+        "title": "Connect to Azimut Battery",
+        "description": "Enter the connection details for your Azimut Battery.",
+        "data": {
+          "host": "IP Address",
+          "serial": "Device Serial Number"
+        },
+        "data_description": {
+          "host": "The IP address of your Azimut Battery",
+          "serial": "The serial number of your Azimut device (found on the label on the side of the battery, e.g., 504589, 365101, 024974)"
+        }
+      },
+      "zeroconf_confirm": { 
+        "title": "Azimut Battery Discovered",
+        "description": "A new Azimut device has been discovered.\n\n**Serial:** {serial}\n**IP Address:** {host}\n\nDo you want to add this device?"
+      },
+      "reconfigure": {
+        "title": "Reconfigure Azimut Battery",
+        "description": "Update the connection settings for device {serial}.",
+        "data": {
+          "host": "IP Address"
+        },
+        "data_description": {
+          "host": "The IP address of your Azimut Battery"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the device. Please check the IP address and ensure the device is online."
+    },
+    "abort": {
+      "already_configured": "This device is already configured.",
+      "reconfigure_failed": "Failed to reconfigure the integration.",
+      "no_serial": "Could not determine device serial number from discovery."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Azimut Battery Options",
+        "description": "Update the connection settings.",
+        "data": {
+          "host": "IP Address"
+        },
+        "data_description": {
+          "host": "The IP address of your Azimut device"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the device. Please check the IP address and ensure the device is online."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "battery_soc": {
+        "name": "Battery state of charge"
+      },
+      "battery_power": {
+        "name": "Battery power"
+      },
+      "battery_voltage": {
+        "name": "Battery voltage"
+      },
+      "battery_capacity": {
+        "name": "Battery capacity"
+      },
+      "grid_power": {
+        "name": "Grid power"
+      },
+      "grid_power_l1": {
+        "name": "Grid power L1"
+      },
+      "grid_power_l2": {
+        "name": "Grid power L2"
+      },
+      "grid_power_l3": {
+        "name": "Grid power L3"
+      },
+      "grid_voltage_l1": {
+        "name": "Grid voltage L1"
+      },
+      "grid_voltage_l2": {
+        "name": "Grid voltage L2"
+      },
+      "grid_voltage_l3": {
+        "name": "Grid voltage L3"
+      },
+      "grid_energy_import": {
+        "name": "Grid energy import"
+      },
+      "grid_energy_export": {
+        "name": "Grid energy export"
+      },
+      "pv_power": {
+        "name": "PV power"
+      },
+      "pv_energy": {
+        "name": "Solar energy total"
+      },
+      "mppt_power": {
+        "name": "MPPT power"
+      },
+      "mppt_energy": {
+        "name": "MPPT energy total"
+      },
+      "inverter_power": {
+        "name": "Inverter power"
+      },
+      "consumption_power": {
+        "name": "Total consumption"
+      },
+      "battery_energy_in": {
+        "name": "Battery energy charged"
+      },
+      "battery_energy_out": {
+        "name": "Battery energy discharged"
+      },
+      "grid_energy_in": {
+        "name": "Grid energy import"
+      },
+      "grid_energy_out": {
+        "name": "Grid energy export"
+      },
+      "reconnect_count": {
+        "name": "MQTT reconnect count"
+      },
+      "total_messages": {
+        "name": "MQTT messages received"
+      },
+      "sensor_count": {
+        "name": "Discovered sensors"
+      }
+    }
+  }
+}
