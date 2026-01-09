@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.4](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.1.3...azimut-energy-v1.1.4) (2026-01-09)
+
+
+### Bug Fixes
+
+* documentation/help urls are pointing to wrong github namespace ([#10](https://github.com/azimut-energy/azimut-ha-integration/issues/10)) ([00f8d33](https://github.com/azimut-energy/azimut-ha-integration/commit/00f8d3384e8c648895e66f1c7451d4d143e8c6a3))
+
 ## [1.1.3](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.1.2...azimut-energy-v1.1.3) (2026-01-09)
 
 
