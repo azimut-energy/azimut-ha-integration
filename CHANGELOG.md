@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.1.0...azimut-energy-v1.1.1) (2026-01-09)
+
+
+### Bug Fixes
+
+* **ci:** Fix release asset creation by using release-please outputs ([#4](https://github.com/azimut-energy/azimut-ha-integration/issues/4)) ([fdbaab4](https://github.com/azimut-energy/azimut-ha-integration/commit/fdbaab40cd3dab522e6c8fe2d90721d784831fc0))
+
 ## [1.1.0](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.0.0...azimut-energy-v1.1.0) (2025-12-30)
 
 
