@@ -42,8 +42,8 @@ jobs:
 
       - name: Create release zip
         run: |
-          cp -r custom_components/azimut_energy azimut_energy
-          zip -r azimut_energy.zip azimut_energy
+          cd custom_components
+          zip -r ../azimut_energy.zip azimut_energy
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
