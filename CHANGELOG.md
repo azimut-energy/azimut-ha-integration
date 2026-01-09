@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.1.1...azimut-energy-v1.1.2) (2026-01-09)
+
+
+### Bug Fixes
+
+* **ci:** Fix zip structure to avoid nested azimut_energy folder ([e8dcee1](https://github.com/azimut-energy/azimut-ha-integration/commit/e8dcee190602b65566c3509b5ea1035ea70020f4))
+
 ## [1.1.1](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.1.0...azimut-energy-v1.1.1) (2026-01-09)
 
 
