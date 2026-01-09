@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.3](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.1.2...azimut-energy-v1.1.3) (2026-01-09)
+
+
+### Bug Fixes
+
+* **ci:** Fix zip structure to have files at root without folder wrapper ([#8](https://github.com/azimut-energy/azimut-ha-integration/issues/8)) ([111b237](https://github.com/azimut-energy/azimut-ha-integration/commit/111b237fbbfd1f8ed0a41a0a689e3e3588ccbeb1))
+
 ## [1.1.2](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.1.1...azimut-energy-v1.1.2) (2026-01-09)
 
 
