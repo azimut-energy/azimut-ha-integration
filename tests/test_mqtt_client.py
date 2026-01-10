@@ -464,3 +464,39 @@ async def test_connection_tracking_edge_cases(mqtt_client: AzimutMQTTClient) -> 
     first_disconnect_time = mqtt_client.last_disconnect_time
     mqtt_client._notify_disconnected()  # Duplicate notification
     assert mqtt_client.last_disconnect_time == first_disconnect_time  # No change
+
+
+async def test_republish_command_topic(mqtt_client: AzimutMQTTClient) -> None:
+    """Test republish command topic is correctly set."""
+    assert mqtt_client._republish_command_topic == "azen/ABC123/command/republish"
+
+
+async def test_request_republish_success(mqtt_client: AzimutMQTTClient) -> None:
+    """Test successful republish request."""
+    mock_client = MagicMock()
+    mock_client.publish = AsyncMock()
+    mqtt_client._client = mock_client
+
+    await mqtt_client._request_republish()
+
+    mock_client.publish.assert_called_once_with(
+        "azen/ABC123/command/republish", payload=""
+    )
+
+
+async def test_request_republish_no_client(mqtt_client: AzimutMQTTClient) -> None:
+    """Test republish request does nothing when client is None."""
+    mqtt_client._client = None
+
+    # Should not raise an error
+    await mqtt_client._request_republish()
+
+
+async def test_request_republish_handles_error(mqtt_client: AzimutMQTTClient) -> None:
+    """Test republish request handles errors gracefully."""
+    mock_client = MagicMock()
+    mock_client.publish = AsyncMock(side_effect=Exception("Publish failed"))
+    mqtt_client._client = mock_client
+
+    # Should not raise an error
+    await mqtt_client._request_republish()

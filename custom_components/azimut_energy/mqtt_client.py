@@ -15,6 +15,7 @@ import aiomqtt
 from .const import (
     MQTT_KEEPALIVE,
     get_discovery_topic,
+    get_republish_command_topic,
     get_state_topic,
 )
 
@@ -66,6 +67,7 @@ class AzimutMQTTClient:
         # Topic patterns
         self._discovery_topic = get_discovery_topic(serial)
         self._state_topic = get_state_topic(serial)
+        self._republish_command_topic = get_republish_command_topic(serial)
 
         # Regex patterns for parsing topics
         # Discovery: homeassistant/sensor/azen_{serial}/{sensor_id}/config
@@ -139,6 +141,25 @@ class AzimutMQTTClient:
             self._last_disconnect_time = time.time()
             if self._connection_callback:
                 self._connection_callback(False)
+
+    async def _request_republish(self) -> None:
+        """Request republish of all sensor values.
+
+        Publishes an empty message to the republish command topic to trigger
+        the device to republish all sensor values. This is called on reconnect
+        to ensure sensors get their initial values.
+        """
+        if not self._client:
+            return
+
+        try:
+            await self._client.publish(self._republish_command_topic, payload="")
+            _LOGGER.debug(
+                "Requested republish of sensor values on topic %s",
+                self._republish_command_topic,
+            )
+        except Exception as err:
+            _LOGGER.warning("Failed to request republish: %s", err)
 
     async def connect(self) -> bool:
         """Connect to MQTT broker (for initial validation only)."""
@@ -223,6 +244,9 @@ class AzimutMQTTClient:
 
                     self._notify_connected()
                     self._last_message_time = time.monotonic()
+
+                    # Request republish of all sensor values on reconnect
+                    await self._request_republish()
 
                     # Listen for messages with timeout
                     await self._listen_loop_with_timeout()
