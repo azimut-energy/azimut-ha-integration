@@ -8,10 +8,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.azimut_energy.const import CONF_SERIAL, DOMAIN  # noqa: I001
-from custom_components.azimut_energy.sensor import (  # noqa: I001
+from custom_components.azimut_energy.const import CONF_SERIAL, DOMAIN
+from custom_components.azimut_energy.sensor import (
     AzimutDiagnosticSensor,
     AzimutSensor,
 )

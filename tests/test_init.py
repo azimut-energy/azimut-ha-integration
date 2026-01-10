@@ -5,12 +5,10 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.azimut_energy.const import CONF_SERIAL, DOMAIN  # noqa: I001
+from custom_components.azimut_energy.const import DOMAIN
 
 
 async def test_setup_entry_success(
