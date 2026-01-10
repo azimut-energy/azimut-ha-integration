@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.0](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.1.4...azimut-energy-v1.2.0) (2026-01-10)
+
+
+### Features
+
+* **mqtt:** add republish command topic support on reconnect ([#15](https://github.com/azimut-energy/azimut-ha-integration/issues/15)) ([cbc5be5](https://github.com/azimut-energy/azimut-ha-integration/commit/cbc5be5e47d286fad0da90638833f24be5c1aa28))
+
+
+### Bug Fixes
+
+* **lint:** remove unused imports in test files ([#13](https://github.com/azimut-energy/azimut-ha-integration/issues/13)) ([2d7c3d9](https://github.com/azimut-energy/azimut-ha-integration/commit/2d7c3d9b042f10b4dd4f0b2041ee7d22bfb0ddb3))
+
 ## [1.1.4](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.1.3...azimut-energy-v1.1.4) (2026-01-09)
 
 
