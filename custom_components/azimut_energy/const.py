@@ -31,6 +31,15 @@ def get_state_topic(serial: str) -> str:
     return f"{STATE_TOPIC_PREFIX}/{serial}/sensor/+/state"
 
 
+def get_republish_command_topic(serial: str) -> str:
+    """Get the republish command topic for a device serial.
+
+    Publishing any message to this topic triggers the device to republish
+    all sensor values. The payload content is ignored.
+    """
+    return f"{STATE_TOPIC_PREFIX}/{serial}/command/republish"
+
+
 # Icon mapping
 ICON_GRID = "mdi:transmission-tower"
 ICON_BATTERY = "mdi:battery"
