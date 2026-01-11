@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.2.1](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.2.0...azimut-energy-v1.2.1) (2026-01-11)
+
+
+### Bug Fixes
+
+* **mqtt:** sensors remain available on MQTT disconnect ([be4ba6e](https://github.com/azimut-energy/azimut-ha-integration/commit/be4ba6e76a039362165a88bab88917a2580961d7))
+
+
+### Documentation
+
+* add CLAUDE.md for AI assistant guidance ([fc7a399](https://github.com/azimut-energy/azimut-ha-integration/commit/fc7a399b1b370d082bba41a6087da1160d8871ca))
+
 ## [1.2.0](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.1.4...azimut-energy-v1.2.0) (2026-01-10)
 
 
