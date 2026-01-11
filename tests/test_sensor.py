@@ -211,12 +211,16 @@ async def test_sensor_state_routing(
     assert sensor.native_value == 92.0
 
 
-async def test_sensor_connection_availability(
+async def test_sensor_remains_available_on_disconnect(
     hass: HomeAssistant,
     mock_coordinator: MagicMock,
     sample_discovery_payload: dict,
 ) -> None:
-    """Test sensor availability based on connection state."""
+    """Test sensor remains available when connection is lost.
+
+    Sensors should only become unavailable when their expire_after timeout hits,
+    not immediately when the MQTT connection drops.
+    """
     sensor = AzimutSensor(
         coordinator=mock_coordinator,
         payload=sample_discovery_payload,
@@ -229,10 +233,12 @@ async def test_sensor_connection_availability(
         sensor.update_value(50.0)
     assert sensor.available
 
-    # Simulate connection loss
-    with patch.object(sensor, "async_write_ha_state"):
-        sensor.set_connection_available(False)
-    assert not sensor.available
+    # Simulate connection loss - sensor should REMAIN available
+    sensor.set_connection_state(False)
+    assert sensor.available  # Sensor should still be available
+
+    # Verify connection state is tracked
+    assert not sensor._mqtt_connected
 
 
 async def test_sensor_expiration(
@@ -261,6 +267,41 @@ async def test_sensor_expiration(
         sensor._check_expiration(dt_util.utcnow())
 
     # Sensor should be unavailable
+    assert not sensor.available
+
+
+async def test_sensor_expiration_when_disconnected(
+    hass: HomeAssistant,
+    mock_coordinator: MagicMock,
+    sample_discovery_payload: dict,
+) -> None:
+    """Test sensor expiration works even when MQTT is disconnected.
+
+    Sensors should become unavailable based on data freshness, not connection state.
+    """
+    sensor = AzimutSensor(
+        coordinator=mock_coordinator,
+        payload=sample_discovery_payload,
+        serial="ABC123",
+    )
+    sensor.hass = hass
+
+    # Set initial value
+    with patch.object(sensor, "async_write_ha_state"):
+        sensor.update_value(1000.0)
+    assert sensor.available
+
+    # Simulate connection loss
+    sensor.set_connection_state(False)
+    assert sensor.available  # Still available after disconnect
+
+    # Simulate time passing beyond expiration (300 seconds)
+    sensor._last_update = dt_util.utcnow() - timedelta(seconds=301)
+
+    with patch.object(sensor, "async_write_ha_state"):
+        sensor._check_expiration(dt_util.utcnow())
+
+    # Sensor should become unavailable due to expiration, even though disconnected
     assert not sensor.available
 
 
