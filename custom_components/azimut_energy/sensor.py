@@ -122,12 +122,14 @@ async def async_setup_entry(
 
     @callback
     def handle_connection_change(connected: bool) -> None:
-        """Handle MQTT connection state change."""
-        if not connected:
-            # Mark all sensors as unavailable when connection is lost
-            for sensor in created_sensors.values():
-                sensor.set_connection_available(False)
-        # When connected, sensors will become available when they receive data
+        """Handle MQTT connection state change.
+
+        Note: We intentionally do NOT mark sensors as unavailable on disconnect.
+        Sensors should only become unavailable when their expire_after timeout hits
+        (no value received for the configured amount of time).
+        """
+        for sensor in created_sensors.values():
+            sensor.set_connection_state(connected)
 
     # Register callbacks with coordinator
     coordinator.set_discovery_callback(handle_discovery)
@@ -229,12 +231,13 @@ class AzimutSensor(SensorEntity):
         self.async_write_ha_state()
 
     @callback
-    def set_connection_available(self, connected: bool) -> None:
-        """Set availability based on MQTT connection state."""
+    def set_connection_state(self, connected: bool) -> None:
+        """Track MQTT connection state.
+
+        Note: This does NOT change sensor availability. Sensors remain available
+        until their expire_after timeout hits (no value received for X seconds).
+        """
         self._mqtt_connected = connected
-        if not connected and self._attr_available:
-            self._attr_available = False
-            self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
         """Run when entity is added to hass."""
@@ -258,12 +261,12 @@ class AzimutSensor(SensorEntity):
 
     @callback
     def _check_expiration(self, now: datetime) -> None:
-        """Check if sensor has expired due to no updates."""
-        if self._last_update is None:
-            return
+        """Check if sensor has expired due to no updates.
 
-        # Only check expiration if MQTT is connected
-        if not self._mqtt_connected:
+        Expiration is checked regardless of MQTT connection state. This ensures
+        sensors become unavailable based on data freshness, not connection status.
+        """
+        if self._last_update is None:
             return
 
         if (now - self._last_update).total_seconds() > self._expire_after:
