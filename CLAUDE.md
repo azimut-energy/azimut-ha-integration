@@ -6,7 +6,7 @@ This document provides essential context for AI assistants working on this codeb
 
 **Azimut HA Integration** is a Home Assistant custom integration for Azimut Energy Systems (Azen). It enables monitoring of energy systems including grid, battery, solar, and consumption data via MQTT.
 
-- **Version**: 1.2.0
+- **Version**: 1.2.1
 - **Python**: 3.11+
 - **Home Assistant**: 2024.1.0+
 - **Main Dependency**: `aiomqtt>=2.0.0`
@@ -42,7 +42,10 @@ azimut-ha-integration/
 ├── .devcontainer/           # VS Code dev container setup
 ├── pyproject.toml           # Project config, tool settings
 ├── requirements_test.txt    # Test dependencies
-└── .pre-commit-config.yaml  # Pre-commit hooks configuration
+├── .pre-commit-config.yaml  # Pre-commit hooks configuration
+├── hacs.json                # HACS custom repository configuration
+├── .release-please-config.json    # Release-please configuration
+└── .release-please-manifest.json  # Version tracking for releases
 ```
 
 ## Key Architecture Patterns
@@ -70,6 +73,32 @@ The coordinator uses callbacks to decouple MQTT messages from entity updates:
 - `set_discovery_callback()` - for new sensor discovery
 - `set_state_callback()` - for value updates
 - `set_connection_callback()` - for connection state changes
+
+### Diagnostic Sensors
+
+The integration creates diagnostic sensors automatically:
+- `sensor_count` - Number of discovered sensors
+- `reconnect_count` - MQTT reconnection attempts
+- `total_messages` - Total MQTT messages received
+
+All diagnostic sensors are marked with `EntityCategory.DIAGNOSTIC`.
+
+### MQTT Client Statistics
+
+The `AzimutMQTTClient` tracks connection statistics:
+- `connection_count` - Total successful connections
+- `reconnect_count` - Reconnection attempts
+- `last_connect_time` - Timestamp of last connection
+- `last_disconnect_time` - Timestamp of last disconnect
+- `total_messages_received` - Message counter
+- `last_message_time` - Last message timestamp
+
+### Translation Key Pattern
+
+Sensors extract translation keys from their `unique_id`:
+- For discovered sensors: `azen_504589_battery_soc` → translation key `battery_soc`
+- For diagnostic sensors: Uses `sensor_type` as translation key
+- Translation strings are defined in `strings.json` and `translations/*.json`
 
 ## Development Commands
 
@@ -186,6 +215,16 @@ All PRs must pass:
 - HACS validation
 - Manifest validation
 
+### Release Automation
+
+Releases are managed by [release-please](https://github.com/googleapis/release-please):
+- Version tracking in `.release-please-manifest.json`
+- Configuration in `.release-please-config.json`
+- Automated changelog generation in `CHANGELOG.md`
+- Creates GitHub releases with `azimut_energy.zip` asset
+
+**Note**: The `manifest.json` version may show `1.0.0` as it's updated during the release process.
+
 ## Key Constants
 
 From `const.py`:
@@ -238,11 +277,14 @@ The integration supports HA's diagnostic download feature. See `diagnostics.py` 
 1. **MQTT Connection**: Uses TLS without certificate verification (`CERT_NONE`)
 2. **Sensor Discovery**: Sensors appear only after device publishes discovery messages
 3. **Reconnection**: Automatic with exponential backoff (1s to 30s)
-4. **Availability**: Sensors become unavailable after 120s without updates
-5. **Zeroconf**: Discovers devices via `_azimut-broker._tcp` mDNS service
+4. **Sensor Availability**: Sensors remain available during MQTT disconnects - they only become unavailable when `expire_after` timeout (120s) passes without receiving a value update. This ensures brief network interruptions don't cause all sensors to show as unavailable.
+5. **Zeroconf**: Discovers devices via `_azimut-broker._tcp.local.` mDNS service
+6. **Connection Sensor**: The binary sensor includes extra attributes: `broker`, `port`, `tls_enabled`
+7. **Async TLS**: TLS context is created asynchronously to avoid blocking the event loop
 
 ## Version History
 
 See `CHANGELOG.md` for detailed release notes. Key recent changes:
+- **v1.2.1**: Fixed sensor availability - sensors remain available on MQTT disconnect until expire_after timeout
 - **v1.2.0**: Added republish command topic support on reconnect
 - **v1.1.0**: Added binary sensor support, translation keys, enhanced diagnostics
