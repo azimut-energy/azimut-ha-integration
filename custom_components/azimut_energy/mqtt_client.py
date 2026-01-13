@@ -8,7 +8,6 @@ import logging
 import re
 import ssl
 from collections.abc import Callable
-from typing import Any
 
 import aiomqtt
 
@@ -18,6 +17,7 @@ from .const import (
     get_republish_command_topic,
     get_state_topic,
 )
+from .types import DiscoveryPayload
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ class AzimutMQTTClient:
         self._total_messages_received = 0
 
         # Callbacks for discovery and state messages
-        self._discovery_callback: Callable[[dict[str, Any]], None] | None = None
+        self._discovery_callback: Callable[[DiscoveryPayload], None] | None = None
         self._state_callback: Callable[[str, float], None] | None = None
         self._connection_callback: Callable[[bool], None] | None = None
 
@@ -80,7 +80,7 @@ class AzimutMQTTClient:
         )
 
     def set_discovery_callback(
-        self, callback: Callable[[dict[str, Any]], None]
+        self, callback: Callable[[DiscoveryPayload], None]
     ) -> None:
         """Set callback for discovery messages."""
         self._discovery_callback = callback
@@ -332,7 +332,7 @@ class AzimutMQTTClient:
     def _handle_discovery_message(self, payload: str) -> None:
         """Handle a discovery message (JSON payload)."""
         try:
-            data = json.loads(payload)
+            data: object = json.loads(payload)
 
             # Handle double-encoded JSON (string inside JSON)
             if isinstance(data, str):
@@ -341,7 +341,8 @@ class AzimutMQTTClient:
             _LOGGER.debug("Received discovery message: %s", data)
 
             if self._discovery_callback and isinstance(data, dict):
-                self._discovery_callback(data)
+                # Cast to DiscoveryPayload - the structure is validated by the device
+                self._discovery_callback(data)  # type: ignore[arg-type]
 
         except json.JSONDecodeError as err:
             _LOGGER.debug("Failed to decode discovery JSON: %s", err)

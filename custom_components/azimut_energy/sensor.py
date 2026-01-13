@@ -19,6 +19,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 
 from .const import CONF_SERIAL, DEFAULT_EXPIRE_AFTER, DOMAIN
+from .types import DiscoveryPayload
 
 if TYPE_CHECKING:
     from . import AzimutMQTTCoordinator
@@ -83,7 +84,7 @@ async def async_setup_entry(
     async_add_entities(diagnostic_sensors)
 
     @callback
-    def handle_discovery(payload: dict[str, Any]) -> None:
+    def handle_discovery(payload: DiscoveryPayload) -> None:
         """Handle discovery message and create sensor."""
         unique_id = payload.get("unique_id")
         if not unique_id:
@@ -145,7 +146,7 @@ class AzimutSensor(SensorEntity):
     def __init__(
         self,
         coordinator: AzimutMQTTCoordinator,
-        payload: dict[str, Any],
+        payload: DiscoveryPayload,
         serial: str,
     ) -> None:
         """Initialize the sensor from discovery payload."""

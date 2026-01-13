@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable
-from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
@@ -19,6 +18,7 @@ from .const import (
     MQTT_USE_TLS,
 )
 from .mqtt_client import AzimutMQTTClient
+from .types import DiscoveryPayload
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -93,8 +93,8 @@ class AzimutMQTTCoordinator:
             use_tls=MQTT_USE_TLS,
         )
 
-        self._listen_task: asyncio.Task | None = None
-        self._discovery_callback: Callable[[dict[str, Any]], None] | None = None
+        self._listen_task: asyncio.Task[None] | None = None
+        self._discovery_callback: Callable[[DiscoveryPayload], None] | None = None
         self._state_callback: Callable[[str, float], None] | None = None
         self._connection_callback: Callable[[bool], None] | None = None
 
@@ -104,7 +104,7 @@ class AzimutMQTTCoordinator:
         self._mqtt_client.set_connection_callback(self._handle_connection_change)
 
     def set_discovery_callback(
-        self, callback_func: Callable[[dict[str, Any]], None]
+        self, callback_func: Callable[[DiscoveryPayload], None]
     ) -> None:
         """Set callback for discovery messages from sensor platform."""
         self._discovery_callback = callback_func
@@ -118,7 +118,7 @@ class AzimutMQTTCoordinator:
         self._connection_callback = callback_func
 
     @callback
-    def _handle_discovery(self, payload: dict[str, Any]) -> None:
+    def _handle_discovery(self, payload: DiscoveryPayload) -> None:
         """Handle discovery message from MQTT client."""
         if self._discovery_callback:
             self._discovery_callback(payload)

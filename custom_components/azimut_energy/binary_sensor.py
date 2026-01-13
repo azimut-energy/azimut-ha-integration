@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -80,7 +80,7 @@ class AzimutConnectionSensor(BinarySensorEntity):
         return True
 
     @property
-    def extra_state_attributes(self) -> dict[str, str]:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return extra state attributes."""
         mqtt_client = self._coordinator.mqtt_client
         return {

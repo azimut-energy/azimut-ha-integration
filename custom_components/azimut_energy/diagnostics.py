@@ -2,24 +2,23 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 
 from .const import CONF_SERIAL, DOMAIN, MQTT_PORT
+from .types import DiagnosticsData, MQTTStatistics, SensorInfo
 
 
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
-) -> dict[str, Any]:
+) -> DiagnosticsData:
     """Return diagnostics for a config entry."""
     coordinator = hass.data[DOMAIN].get(entry.entry_id)
 
     # Gather sensor information
-    sensors_info = []
+    sensors_info: list[SensorInfo] = []
     if coordinator:
         # Get all entities for this config entry
         entity_registry = er.async_get(hass)
@@ -31,18 +30,24 @@ async def async_get_config_entry_diagnostics(
 
         for entity in entities:
             state = hass.states.get(entity.entity_id)
-            sensors_info.append(
-                {
-                    "entity_id": entity.entity_id,
-                    "unique_id": entity.unique_id,
-                    "name": entity.name or entity.original_name,
-                    "state": state.state if state else "unknown",
-                    "available": state.state != "unavailable" if state else False,
-                }
-            )
+            sensor_info: SensorInfo = {
+                "entity_id": entity.entity_id,
+                "unique_id": entity.unique_id,
+                "name": entity.name or entity.original_name,
+                "state": state.state if state else "unknown",
+                "available": state.state != "unavailable" if state else False,
+            }
+            sensors_info.append(sensor_info)
 
     # Get MQTT statistics if coordinator is available
-    mqtt_stats = {}
+    mqtt_stats: MQTTStatistics = {
+        "connection_count": 0,
+        "reconnect_count": 0,
+        "total_messages_received": 0,
+        "last_message_time": 0,
+        "last_connect_time": None,
+        "last_disconnect_time": None,
+    }
     if coordinator:
         mqtt_client = coordinator.mqtt_client
         mqtt_stats = {
