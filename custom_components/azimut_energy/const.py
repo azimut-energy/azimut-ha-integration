@@ -1,24 +1,26 @@
 """Constants for the Azimut Energy integration."""
 
-DOMAIN = "azimut_energy"
+from typing import Final
+
+DOMAIN: Final[str] = "azimut_energy"
 
 # MQTT Configuration
-MQTT_PORT = 8883
-MQTT_USE_TLS = True
-MQTT_KEEPALIVE = 30  # Reduced from 60 for faster dead connection detection
+MQTT_PORT: Final[int] = 8883
+MQTT_USE_TLS: Final[bool] = True
+MQTT_KEEPALIVE: Final[int] = 30  # Reduced from 60 for faster dead connection detection
 
 # Default expiration for sensors (seconds)
 # Sensors become unavailable if no update received within this time
-DEFAULT_EXPIRE_AFTER = 120  # Reduced from 300 to 2 minutes
+DEFAULT_EXPIRE_AFTER: Final[int] = 120  # Reduced from 300 to 2 minutes
 
 # Configuration keys
-CONF_SERIAL = "serial"
+CONF_SERIAL: Final[str] = "serial"
 
 # MQTT Topic patterns
 # Discovery topic: homeassistant/sensor/azen_{serial}/+/config
 # State topic: azen/{serial}/sensor/+/state
-DISCOVERY_TOPIC_PREFIX = "homeassistant/sensor"
-STATE_TOPIC_PREFIX = "azen"
+DISCOVERY_TOPIC_PREFIX: Final[str] = "homeassistant/sensor"
+STATE_TOPIC_PREFIX: Final[str] = "azen"
 
 
 def get_discovery_topic(serial: str) -> str:
@@ -41,10 +43,10 @@ def get_republish_command_topic(serial: str) -> str:
 
 
 # Icon mapping
-ICON_GRID = "mdi:transmission-tower"
-ICON_BATTERY = "mdi:battery"
-ICON_SOLAR = "mdi:solar-power"
-ICON_INVERTER = "mdi:power-plug"
-ICON_CONSUMPTION = "mdi:home-lightning-bolt"
-ICON_VOLTAGE = "mdi:flash"
-ICON_ENERGY = "mdi:lightning-bolt"
+ICON_GRID: Final[str] = "mdi:transmission-tower"
+ICON_BATTERY: Final[str] = "mdi:battery"
+ICON_SOLAR: Final[str] = "mdi:solar-power"
+ICON_INVERTER: Final[str] = "mdi:power-plug"
+ICON_CONSUMPTION: Final[str] = "mdi:home-lightning-bolt"
+ICON_VOLTAGE: Final[str] = "mdi:flash"
+ICON_ENERGY: Final[str] = "mdi:lightning-bolt"
