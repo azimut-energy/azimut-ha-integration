@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.2.1...azimut-energy-v1.3.0) (2026-01-16)
+
+
+### Features
+
+* **binary_sensor:** add binary sensor definitions support ([#22](https://github.com/azimut-energy/azimut-ha-integration/issues/22)) ([88f9445](https://github.com/azimut-energy/azimut-ha-integration/commit/88f9445e34876704b5f8f58e10abdda654bd401f))
+* **types:** add comprehensive type annotations ([c5ecc4b](https://github.com/azimut-energy/azimut-ha-integration/commit/c5ecc4ba6a2cc17b1f1745c90e587bc8ad8c2a87))
+
 ## [1.2.1](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.2.0...azimut-energy-v1.2.1) (2026-01-11)
 
 
