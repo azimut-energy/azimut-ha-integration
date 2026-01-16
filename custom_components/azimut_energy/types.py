@@ -93,3 +93,13 @@ class DiagnosticsData(TypedDict):
     mqtt_topics: MQTTTopicsInfo
     mqtt_statistics: MQTTStatistics
     sensors: SensorsInfo
+
+
+class BinarySensorDefinition(TypedDict):
+    """Binary sensor definition structure."""
+
+    id: str
+    name: str
+    device_class: str
+    icon: str
+    expire_after: int

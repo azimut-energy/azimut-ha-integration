@@ -1,6 +1,11 @@
 """Constants for the Azimut Energy integration."""
 
-from typing import Final
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Final
+
+if TYPE_CHECKING:
+    from .types import BinarySensorDefinition
 
 DOMAIN: Final[str] = "azimut_energy"
 
@@ -50,3 +55,24 @@ ICON_INVERTER: Final[str] = "mdi:power-plug"
 ICON_CONSUMPTION: Final[str] = "mdi:home-lightning-bolt"
 ICON_VOLTAGE: Final[str] = "mdi:flash"
 ICON_ENERGY: Final[str] = "mdi:lightning-bolt"
+
+
+# Binary sensor device classes
+BINARY_DEVICE_CLASS_PROBLEM: Final[str] = "problem"
+
+
+def get_binary_sensor_definitions() -> list[BinarySensorDefinition]:
+    """Get the list of binary sensor definitions.
+
+    Returns a list of binary sensor definitions that should be created
+    for each Azimut device.
+    """
+    return [
+        {
+            "id": "grid_lost_alarm",
+            "name": "Grid Lost Alarm",
+            "device_class": BINARY_DEVICE_CLASS_PROBLEM,
+            "icon": "mdi:transmission-tower-off",
+            "expire_after": 60 * 60,  # 1 hour
+        },
+    ]
