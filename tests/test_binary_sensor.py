@@ -12,9 +12,9 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.util import dt as dt_util
 
 from custom_components.azimut_energy.binary_sensor import (
+    BINARY_DEVICE_CLASS_MAP,
     AzimutBinarySensor,
     AzimutConnectionSensor,
-    BINARY_DEVICE_CLASS_MAP,
 )
 from custom_components.azimut_energy.const import (
     BINARY_DEVICE_CLASS_PROBLEM,
@@ -57,10 +57,12 @@ async def test_binary_sensor_setup(
     add_entities_mock = MagicMock()
     await async_setup_entry(hass, entry, add_entities_mock)
 
-    # Verify connection sensor was created
+    # Verify sensors were created (connection sensor + sensors from definitions)
     assert add_entities_mock.call_count == 1
     sensors = add_entities_mock.call_args[0][0]
-    assert len(sensors) == 1
+    # Should have at least 2 sensors (connection + grid_lost_alarm)
+    assert len(sensors) >= 2
+    # First should be connection sensor
     assert isinstance(sensors[0], AzimutConnectionSensor)
 
 
