@@ -192,7 +192,9 @@ def test_binary_device_class_map() -> None:
     assert "problem" in BINARY_DEVICE_CLASS_MAP
     assert BINARY_DEVICE_CLASS_MAP["problem"] == BinarySensorDeviceClass.PROBLEM
     assert "connectivity" in BINARY_DEVICE_CLASS_MAP
-    assert BINARY_DEVICE_CLASS_MAP["connectivity"] == BinarySensorDeviceClass.CONNECTIVITY
+    assert (
+        BINARY_DEVICE_CLASS_MAP["connectivity"] == BinarySensorDeviceClass.CONNECTIVITY
+    )
 
 
 async def test_binary_sensor_from_definition(
