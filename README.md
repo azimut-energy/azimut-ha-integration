@@ -7,11 +7,6 @@
 
 Home Assistant integration for Azimut Energy Systems (Azen). Monitor your energy system including grid, battery, solar, and consumption data in real-time.
 
-> **⚠️ Important Notice**
-> This integration requires firmware with MQTT support, which is **not yet available** in the current production firmware.
-> The firmware update with MQTT support is **planned for early January 2026**.
-> This integration will not work until your Azimut Energy System is updated to the new firmware.
-
 > **ℹ️ Support Notice**
 > This integration is provided by Azimut Energy to enable sensor monitoring in Home Assistant.
 > However, **Azimut Energy does not provide support for Home Assistant configurations or setup**.
