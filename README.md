@@ -1,6 +1,6 @@
 # Azimut Energy
 
-[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
 [![CI](https://github.com/azimut-energy/azimut-ha-integration/actions/workflows/ci.yml/badge.svg)](https://github.com/azimut-energy/azimut-ha-integration/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/badge/coverage-88%25-brightgreen)](https://github.com/azimut-energy/azimut-ha-integration)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
@@ -37,13 +37,11 @@ Home Assistant integration for Azimut Energy Systems (Azen). Monitor your energy
 ### HACS (Recommended)
 
 1. Make sure you have [HACS](https://hacs.xyz/) installed
-2. Add this repository as a custom repository in HACS:
-   - Go to HACS → Integrations → ⋮ (menu) → Custom repositories
-   - Add URL: `https://github.com/azimut-energy/azimut-ha-integration`
-   - Category: Integration
-3. Search for "Azimut Energy" in HACS
-4. Click Install
-5. Restart Home Assistant
+2. Open HACS in Home Assistant
+3. Go to **Integrations**
+4. Search for "Azimut Energy"
+5. Click **Download**
+6. Restart Home Assistant
 
 ### Manual Installation
 
