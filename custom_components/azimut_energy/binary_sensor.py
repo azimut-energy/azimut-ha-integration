@@ -64,6 +64,9 @@ async def async_setup_entry(
     coordinator: AzimutMQTTCoordinator = hass.data[DOMAIN][entry.entry_id]
     serial = entry.data.get(CONF_SERIAL, "")
 
+    # Track created binary sensors by state_topic
+    created_binary_sensors: dict[str, AzimutBinarySensor] = {}
+
     entities: list[BinarySensorEntity] = []
 
     # Create connection status binary sensor
@@ -71,9 +74,24 @@ async def async_setup_entry(
 
     # Create binary sensors from definitions
     for definition in get_binary_sensor_definitions():
-        entities.append(AzimutBinarySensor(coordinator, serial, definition))
+        sensor = AzimutBinarySensor(coordinator, serial, definition)
+        entities.append(sensor)
+        # Track by state topic for routing state updates
+        created_binary_sensors[sensor.state_topic] = sensor
 
     async_add_entities(entities)
+
+    @callback
+    def handle_binary_sensor_state_update(state_topic: str, is_on: bool) -> None:
+        """Handle binary sensor state update and route to correct sensor."""
+        if state_topic in created_binary_sensors:
+            created_binary_sensors[state_topic].update_state(is_on)
+            return
+
+        _LOGGER.debug("No binary sensor found for state topic: %s", state_topic)
+
+    # Register callback with coordinator
+    coordinator.set_binary_sensor_state_callback(handle_binary_sensor_state_update)
 
 
 class AzimutConnectionSensor(BinarySensorEntity):
@@ -153,6 +171,10 @@ class AzimutBinarySensor(BinarySensorEntity):
         self._attr_name = definition["name"]
         self._attr_icon = definition["icon"]
 
+        # State topic for receiving MQTT updates
+        # Format: azen/{serial}/binary_sensor/{sensor_id}/state
+        self._state_topic = f"azen/{serial}/binary_sensor/{definition['id']}/state"
+
         # Map device class string to enum
         device_class_str = definition["device_class"]
         if device_class_str in BINARY_DEVICE_CLASS_MAP:
@@ -174,6 +196,11 @@ class AzimutBinarySensor(BinarySensorEntity):
         # Initial state - unavailable until we receive data
         self._attr_is_on: bool | None = None
         self._attr_available = False
+
+    @property
+    def state_topic(self) -> str:
+        """Return the state topic for this binary sensor."""
+        return self._state_topic
 
     @callback
     def update_state(self, is_on: bool) -> None:

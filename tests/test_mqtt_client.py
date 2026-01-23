@@ -480,7 +480,7 @@ async def test_request_republish_success(mqtt_client: AzimutMQTTClient) -> None:
     await mqtt_client._request_republish()
 
     mock_client.publish.assert_called_once_with(
-        "azen/ABC123/command/republish", payload=""
+        "azen/ABC123/command/republish", payload="1"
     )
 
 
