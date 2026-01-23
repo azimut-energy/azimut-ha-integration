@@ -22,27 +22,39 @@ DEFAULT_EXPIRE_AFTER: Final[int] = 120  # Reduced from 300 to 2 minutes
 CONF_SERIAL: Final[str] = "serial"
 
 # MQTT Topic patterns
-# Discovery topic: homeassistant/sensor/azen_{serial}/+/config
-# State topic: azen/{serial}/sensor/+/state
-DISCOVERY_TOPIC_PREFIX: Final[str] = "homeassistant/sensor"
+# Sensor discovery topic: homeassistant/sensor/azen_{serial}/+/config
+# Sensor state topic: azen/{serial}/sensor/+/state
+# Binary sensor discovery topic: homeassistant/binary_sensor/azen_{serial}/+/config
+# Binary sensor state topic: azen/{serial}/binary_sensor/+/state
+SENSOR_DISCOVERY_TOPIC_PREFIX: Final[str] = "homeassistant/sensor"
+BINARY_SENSOR_DISCOVERY_TOPIC_PREFIX: Final[str] = "homeassistant/binary_sensor"
 STATE_TOPIC_PREFIX: Final[str] = "azen"
 
 
 def get_discovery_topic(serial: str) -> str:
-    """Get the discovery topic pattern for a device serial."""
-    return f"{DISCOVERY_TOPIC_PREFIX}/azen_{serial}/+/config"
+    """Get the sensor discovery topic pattern for a device serial."""
+    return f"{SENSOR_DISCOVERY_TOPIC_PREFIX}/azen_{serial}/+/config"
+
+
+def get_binary_sensor_discovery_topic(serial: str) -> str:
+    """Get the binary sensor discovery topic pattern for a device serial."""
+    return f"{BINARY_SENSOR_DISCOVERY_TOPIC_PREFIX}/azen_{serial}/+/config"
 
 
 def get_state_topic(serial: str) -> str:
-    """Get the state topic pattern for a device serial."""
+    """Get the sensor state topic pattern for a device serial."""
     return f"{STATE_TOPIC_PREFIX}/{serial}/sensor/+/state"
+
+
+def get_binary_sensor_state_topic(serial: str) -> str:
+    """Get the binary sensor state topic pattern for a device serial."""
+    return f"{STATE_TOPIC_PREFIX}/{serial}/binary_sensor/+/state"
 
 
 def get_republish_command_topic(serial: str) -> str:
     """Get the republish command topic for a device serial.
 
-    Publishing any message to this topic triggers the device to republish
-    all sensor values. The payload content is ignored.
+    Publishing to this topic triggers the device to republish all sensor values.
     """
     return f"{STATE_TOPIC_PREFIX}/{serial}/command/republish"
 

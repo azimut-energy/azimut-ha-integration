@@ -18,7 +18,7 @@ from .const import (
     MQTT_USE_TLS,
 )
 from .mqtt_client import AzimutMQTTClient
-from .types import DiscoveryPayload
+from .types import BinarySensorDiscoveryPayload, DiscoveryPayload
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -97,11 +97,21 @@ class AzimutMQTTCoordinator:
         self._discovery_callback: Callable[[DiscoveryPayload], None] | None = None
         self._state_callback: Callable[[str, float], None] | None = None
         self._connection_callback: Callable[[bool], None] | None = None
+        self._binary_sensor_discovery_callback: (
+            Callable[[BinarySensorDiscoveryPayload], None] | None
+        ) = None
+        self._binary_sensor_state_callback: Callable[[str, bool], None] | None = None
 
         # Set up MQTT client callbacks
         self._mqtt_client.set_discovery_callback(self._handle_discovery)
         self._mqtt_client.set_state_callback(self._handle_state)
         self._mqtt_client.set_connection_callback(self._handle_connection_change)
+        self._mqtt_client.set_binary_sensor_discovery_callback(
+            self._handle_binary_sensor_discovery
+        )
+        self._mqtt_client.set_binary_sensor_state_callback(
+            self._handle_binary_sensor_state
+        )
 
     def set_discovery_callback(
         self, callback_func: Callable[[DiscoveryPayload], None]
@@ -116,6 +126,18 @@ class AzimutMQTTCoordinator:
     def set_connection_callback(self, callback_func: Callable[[bool], None]) -> None:
         """Set callback for connection state changes."""
         self._connection_callback = callback_func
+
+    def set_binary_sensor_discovery_callback(
+        self, callback_func: Callable[[BinarySensorDiscoveryPayload], None]
+    ) -> None:
+        """Set callback for binary sensor discovery messages."""
+        self._binary_sensor_discovery_callback = callback_func
+
+    def set_binary_sensor_state_callback(
+        self, callback_func: Callable[[str, bool], None]
+    ) -> None:
+        """Set callback for binary sensor state messages."""
+        self._binary_sensor_state_callback = callback_func
 
     @callback
     def _handle_discovery(self, payload: DiscoveryPayload) -> None:
@@ -134,6 +156,20 @@ class AzimutMQTTCoordinator:
         """Handle connection state change from MQTT client."""
         if self._connection_callback:
             self._connection_callback(connected)
+
+    @callback
+    def _handle_binary_sensor_discovery(
+        self, payload: BinarySensorDiscoveryPayload
+    ) -> None:
+        """Handle binary sensor discovery message from MQTT client."""
+        if self._binary_sensor_discovery_callback:
+            self._binary_sensor_discovery_callback(payload)
+
+    @callback
+    def _handle_binary_sensor_state(self, state_topic: str, is_on: bool) -> None:
+        """Handle binary sensor state message from MQTT client."""
+        if self._binary_sensor_state_callback:
+            self._binary_sensor_state_callback(state_topic, is_on)
 
     async def async_connect(self) -> bool:
         """Connect to MQTT broker."""

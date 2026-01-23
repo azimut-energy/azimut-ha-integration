@@ -9,6 +9,8 @@ on:
     branches:
       - main
       - master
+  schedule:
+    - cron: "0 0 * * *"
 
 jobs:
   lint:
@@ -64,50 +66,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Hassfest validation
+        uses: home-assistant/actions/hassfest@master
 
-      - name: Install Home Assistant
-        run: |
-          python -m pip install --upgrade pip
-          pip install homeassistant
-
-      - name: Validate manifest.json
-        run: |
-          python -c "
-          import json
-          with open('custom_components/azimut_energy/manifest.json') as f:
-              manifest = json.load(f)
-          required = ['domain', 'name', 'version', 'config_flow']
-          for key in required:
-              assert key in manifest, f'Missing required key: {key}'
-          print('manifest.json is valid')
-          "
-
-      - name: Check translations
-        run: |
-          python -c "
-          import json
-          with open('custom_components/azimut_energy/strings.json') as f:
-              strings = json.load(f)
-          with open('custom_components/azimut_energy/translations/en.json') as f:
-              en = json.load(f)
-          print('Translations are valid JSON')
-          "
-
-  hacs:
-    name: HACS Validation
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: HACS Action
+      - name: HACS validation
         uses: hacs/action@main
         with:
           category: integration
 
-
-
+      - name: Check integration structure
+        run: |
+          required_files=(
+            "custom_components/azimut_energy/__init__.py"
+            "custom_components/azimut_energy/config_flow.py"
+            "custom_components/azimut_energy/const.py"
+            "custom_components/azimut_energy/manifest.json"
+            "custom_components/azimut_energy/sensor.py"
+            "custom_components/azimut_energy/strings.json"
+            "custom_components/azimut_energy/translations/en.json"
+          )
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "Missing required file: $file"
+              exit 1
+            fi
+          done
+          echo "All required files present"

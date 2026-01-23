@@ -103,3 +103,18 @@ class BinarySensorDefinition(TypedDict):
     device_class: str
     icon: str
     expire_after: int
+
+
+class BinarySensorDiscoveryPayload(TypedDict, total=False):
+    """MQTT binary sensor discovery payload structure."""
+
+    unique_id: str
+    state_topic: str
+    name: str
+    icon: str | None
+    device_class: str | None
+    entity_category: str | None
+    expire_after: int
+    payload_on: str
+    payload_off: str
+    device: DeviceInfoPayload

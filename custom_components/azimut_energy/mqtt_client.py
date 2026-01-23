@@ -13,11 +13,13 @@ import aiomqtt
 
 from .const import (
     MQTT_KEEPALIVE,
+    get_binary_sensor_discovery_topic,
+    get_binary_sensor_state_topic,
     get_discovery_topic,
     get_republish_command_topic,
     get_state_topic,
 )
-from .types import DiscoveryPayload
+from .types import BinarySensorDiscoveryPayload, DiscoveryPayload
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,6 +62,10 @@ class AzimutMQTTClient:
         self._discovery_callback: Callable[[DiscoveryPayload], None] | None = None
         self._state_callback: Callable[[str, float], None] | None = None
         self._connection_callback: Callable[[bool], None] | None = None
+        self._binary_sensor_discovery_callback: (
+            Callable[[BinarySensorDiscoveryPayload], None] | None
+        ) = None
+        self._binary_sensor_state_callback: Callable[[str, bool], None] | None = None
 
         # TLS context - created lazily to avoid blocking in __init__
         self._tls_context: ssl.SSLContext | None = None
@@ -67,16 +73,26 @@ class AzimutMQTTClient:
         # Topic patterns
         self._discovery_topic = get_discovery_topic(serial)
         self._state_topic = get_state_topic(serial)
+        self._binary_sensor_discovery_topic = get_binary_sensor_discovery_topic(serial)
+        self._binary_sensor_state_topic = get_binary_sensor_state_topic(serial)
         self._republish_command_topic = get_republish_command_topic(serial)
 
         # Regex patterns for parsing topics
-        # Discovery: homeassistant/sensor/azen_{serial}/{sensor_id}/config
+        # Sensor discovery: homeassistant/sensor/azen_{serial}/{sensor_id}/config
         self._discovery_pattern = re.compile(
             rf"homeassistant/sensor/azen_{re.escape(serial)}/([^/]+)/config"
         )
-        # State: azen/{serial}/sensor/{sensor_id}/state
+        # Sensor state: azen/{serial}/sensor/{sensor_id}/state
         self._state_pattern = re.compile(
             rf"azen/{re.escape(serial)}/sensor/([^/]+)/state"
+        )
+        # Binary sensor discovery: homeassistant/binary_sensor/azen_{serial}/{sensor_id}/config
+        self._binary_sensor_discovery_pattern = re.compile(
+            rf"homeassistant/binary_sensor/azen_{re.escape(serial)}/([^/]+)/config"
+        )
+        # Binary sensor state: azen/{serial}/binary_sensor/{sensor_id}/state
+        self._binary_sensor_state_pattern = re.compile(
+            rf"azen/{re.escape(serial)}/binary_sensor/([^/]+)/state"
         )
 
     def set_discovery_callback(
@@ -98,6 +114,21 @@ class AzimutMQTTClient:
         Callback receives True when connected, False when disconnected.
         """
         self._connection_callback = callback
+
+    def set_binary_sensor_discovery_callback(
+        self, callback: Callable[[BinarySensorDiscoveryPayload], None]
+    ) -> None:
+        """Set callback for binary sensor discovery messages."""
+        self._binary_sensor_discovery_callback = callback
+
+    def set_binary_sensor_state_callback(
+        self, callback: Callable[[str, bool], None]
+    ) -> None:
+        """Set callback for binary sensor state messages.
+
+        Callback receives (state_topic, is_on).
+        """
+        self._binary_sensor_state_callback = callback
 
     def _create_tls_context(self) -> ssl.SSLContext | None:
         """Create TLS context if TLS is enabled (synchronous, for executor)."""
@@ -145,15 +176,15 @@ class AzimutMQTTClient:
     async def _request_republish(self) -> None:
         """Request republish of all sensor values.
 
-        Publishes an empty message to the republish command topic to trigger
-        the device to republish all sensor values. This is called on reconnect
-        to ensure sensors get their initial values.
+        Publishes to the republish command topic to trigger the device to
+        republish all sensor values. This is called on reconnect to ensure
+        sensors get their initial values.
         """
         if not self._client:
             return
 
         try:
-            await self._client.publish(self._republish_command_topic, payload="")
+            await self._client.publish(self._republish_command_topic, payload="1")
             _LOGGER.debug(
                 "Requested republish of sensor values on topic %s",
                 self._republish_command_topic,
@@ -180,6 +211,8 @@ class AzimutMQTTClient:
             # Subscribe to test connection
             await client.subscribe(self._discovery_topic)
             await client.subscribe(self._state_topic)
+            await client.subscribe(self._binary_sensor_discovery_topic)
+            await client.subscribe(self._binary_sensor_state_topic)
 
             _LOGGER.info(
                 "Connected to MQTT broker at %s:%s for device %s",
@@ -232,6 +265,8 @@ class AzimutMQTTClient:
                     # Subscribe to topics
                     await self._client.subscribe(self._discovery_topic)
                     await self._client.subscribe(self._state_topic)
+                    await self._client.subscribe(self._binary_sensor_discovery_topic)
+                    await self._client.subscribe(self._binary_sensor_state_topic)
 
                     _LOGGER.info(
                         "MQTT connected to %s:%s for device %s",
@@ -241,6 +276,10 @@ class AzimutMQTTClient:
                     )
                     _LOGGER.debug("Subscribed to: %s", self._discovery_topic)
                     _LOGGER.debug("Subscribed to: %s", self._state_topic)
+                    _LOGGER.debug(
+                        "Subscribed to: %s", self._binary_sensor_discovery_topic
+                    )
+                    _LOGGER.debug("Subscribed to: %s", self._binary_sensor_state_topic)
 
                     self._notify_connected()
                     self._last_message_time = time.monotonic()
@@ -312,16 +351,30 @@ class AzimutMQTTClient:
                 continue
 
             try:
-                # Check if this is a discovery message
+                # Check if this is a sensor discovery message
                 discovery_match = self._discovery_pattern.match(topic)
                 if discovery_match:
                     self._handle_discovery_message(payload)
                     continue
 
-                # Check if this is a state message
+                # Check if this is a sensor state message
                 state_match = self._state_pattern.match(topic)
                 if state_match:
                     self._handle_state_message(topic, payload)
+                    continue
+
+                # Check if this is a binary sensor discovery message
+                binary_discovery_match = self._binary_sensor_discovery_pattern.match(
+                    topic
+                )
+                if binary_discovery_match:
+                    self._handle_binary_sensor_discovery_message(payload)
+                    continue
+
+                # Check if this is a binary sensor state message
+                binary_state_match = self._binary_sensor_state_pattern.match(topic)
+                if binary_state_match:
+                    self._handle_binary_sensor_state_message(topic, payload)
                     continue
 
                 _LOGGER.debug("Unhandled topic: %s", topic)
@@ -370,6 +423,53 @@ class AzimutMQTTClient:
 
         except ValueError as err:
             _LOGGER.debug("Failed to parse state value '%s': %s", payload, err)
+
+    def _handle_binary_sensor_discovery_message(self, payload: str) -> None:
+        """Handle a binary sensor discovery message (JSON payload)."""
+        try:
+            data: object = json.loads(payload)
+
+            # Handle double-encoded JSON (string inside JSON)
+            if isinstance(data, str):
+                data = json.loads(data)
+
+            _LOGGER.debug("Received binary sensor discovery message: %s", data)
+
+            if self._binary_sensor_discovery_callback and isinstance(data, dict):
+                self._binary_sensor_discovery_callback(data)  # type: ignore[arg-type]
+
+        except json.JSONDecodeError as err:
+            _LOGGER.debug("Failed to decode binary sensor discovery JSON: %s", err)
+
+    def _handle_binary_sensor_state_message(self, topic: str, payload: str) -> None:
+        """Handle a binary sensor state message (ON/OFF string)."""
+        try:
+            # Handle JSON-encoded string (e.g., "\"ON\"")
+            try:
+                parsed = json.loads(payload)
+                if isinstance(parsed, str):
+                    payload = parsed
+            except json.JSONDecodeError:
+                pass  # Use original payload
+
+            # Convert ON/OFF to boolean
+            payload_upper = payload.upper().strip()
+            if payload_upper == "ON":
+                is_on = True
+            elif payload_upper == "OFF":
+                is_on = False
+            else:
+                raise ValueError(f"Unexpected binary sensor payload: {payload}")
+
+            _LOGGER.debug("Received binary sensor state update on %s: %s", topic, is_on)
+
+            if self._binary_sensor_state_callback:
+                self._binary_sensor_state_callback(topic, is_on)
+
+        except ValueError as err:
+            _LOGGER.debug(
+                "Failed to parse binary sensor state value '%s': %s", payload, err
+            )
 
     @property
     def is_connected(self) -> bool:
