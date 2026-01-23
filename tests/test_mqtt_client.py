@@ -47,7 +47,8 @@ async def test_connect_success(mqtt_client: AzimutMQTTClient) -> None:
     assert result is True
     # connect() is for validation only, it disconnects after
     assert not mqtt_client.is_connected
-    assert mock_aiomqtt_client.subscribe.call_count == 2  # Discovery + state topics
+    # Discovery + state topics for both sensors and binary sensors
+    assert mock_aiomqtt_client.subscribe.call_count == 4
 
 
 async def test_connect_failure(mqtt_client: AzimutMQTTClient) -> None:
