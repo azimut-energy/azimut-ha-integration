@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.3.1...azimut-energy-v1.4.0) (2026-03-19)
+
+
+### Features
+
+* Add total solar power/energy computed sensors + clarify translations for PV/MPPT ([#28](https://github.com/azimut-energy/azimut-ha-integration/issues/28)) ([b0ee145](https://github.com/azimut-energy/azimut-ha-integration/commit/b0ee145cd715a958d3c11c56803e6c762ae73f96))
+
 ## [1.3.1](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.3.0...azimut-energy-v1.3.1) (2026-01-23)
 
 
