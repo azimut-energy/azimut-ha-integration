@@ -97,16 +97,22 @@
         "name": "Grid energy export"
       },
       "pv_power": {
-        "name": "PV power"
+        "name": "Solar power (AC-coupled)"
       },
       "pv_energy": {
-        "name": "Solar energy total"
+        "name": "Solar energy (AC-coupled)"
       },
       "mppt_power": {
-        "name": "MPPT power"
+        "name": "Solar power (DC-coupled / MPPT)"
       },
       "mppt_energy": {
-        "name": "MPPT energy total"
+        "name": "Solar energy (DC-coupled / MPPT)"
+      },
+      "total_solar_power": {
+        "name": "Total solar power"
+      },
+      "total_solar_energy": {
+        "name": "Total solar energy"
       },
       "inverter_power": {
         "name": "Inverter power"

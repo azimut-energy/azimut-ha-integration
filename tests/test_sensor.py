@@ -13,6 +13,7 @@ from custom_components.azimut_energy.const import CONF_SERIAL, DOMAIN
 from custom_components.azimut_energy.sensor import (
     AzimutDiagnosticSensor,
     AzimutSensor,
+    AzimutTotalSolarSensor,
 )
 
 
@@ -662,3 +663,283 @@ async def test_diagnostic_sensor_default_value(
         icon="mdi:counter",
     )
     assert sensor.native_value == 0
+
+
+async def test_total_solar_power_created_on_pv_discovery(
+    hass: HomeAssistant,
+    mock_coordinator: MagicMock,
+) -> None:
+    """Test total solar power sensor is created when pv_power is discovered."""
+    from custom_components.azimut_energy.sensor import async_setup_entry
+
+    entry = MagicMock()
+    entry.data = {CONF_SERIAL: "ABC123"}
+    entry.entry_id = "test_entry"
+
+    hass.data[DOMAIN] = {entry.entry_id: mock_coordinator}
+
+    mqtt_client = MagicMock()
+    mqtt_client.reconnect_count = 0
+    mqtt_client.total_messages_received = 0
+    mock_coordinator.mqtt_client = mqtt_client
+
+    callbacks = {}
+    mock_coordinator.set_discovery_callback.side_effect = lambda cb: callbacks.update(
+        {"discovery": cb}
+    )
+    mock_coordinator.set_state_callback.side_effect = lambda cb: callbacks.update(
+        {"state": cb}
+    )
+    mock_coordinator.set_connection_callback.side_effect = lambda cb: None
+
+    add_entities_mock = MagicMock()
+    await async_setup_entry(hass, entry, add_entities_mock)
+
+    # Discover pv_power sensor
+    pv_payload = {
+        "unique_id": "azen_ABC123_pv_power",
+        "name": "PV Power",
+        "state_topic": "azen/ABC123/sensor/pv_power/state",
+        "unit_of_measurement": "W",
+        "device_class": "power",
+        "state_class": "measurement",
+        "device": {
+            "identifiers": ["azen_ABC123"],
+            "name": "Azen ABC123",
+            "manufacturer": "Azimut",
+        },
+    }
+    callbacks["discovery"](pv_payload)
+
+    # Should create pv_power + total_solar_power
+    sensors = add_entities_mock.call_args_list[1][0][0]
+    assert len(sensors) == 2
+    total_sensor = next(s for s in sensors if isinstance(s, AzimutTotalSolarSensor))
+    assert total_sensor.unique_id == "azen_ABC123_total_solar_power"
+    assert total_sensor.translation_key == "total_solar_power"
+
+
+async def test_total_solar_power_created_once(
+    hass: HomeAssistant,
+    mock_coordinator: MagicMock,
+) -> None:
+    """Test total solar power sensor is created only once even with both PV and MPPT."""
+    from custom_components.azimut_energy.sensor import async_setup_entry
+
+    entry = MagicMock()
+    entry.data = {CONF_SERIAL: "ABC123"}
+    entry.entry_id = "test_entry"
+
+    hass.data[DOMAIN] = {entry.entry_id: mock_coordinator}
+
+    mqtt_client = MagicMock()
+    mqtt_client.reconnect_count = 0
+    mqtt_client.total_messages_received = 0
+    mock_coordinator.mqtt_client = mqtt_client
+
+    callbacks = {}
+    mock_coordinator.set_discovery_callback.side_effect = lambda cb: callbacks.update(
+        {"discovery": cb}
+    )
+    mock_coordinator.set_state_callback.side_effect = lambda cb: callbacks.update(
+        {"state": cb}
+    )
+    mock_coordinator.set_connection_callback.side_effect = lambda cb: None
+
+    add_entities_mock = MagicMock()
+    await async_setup_entry(hass, entry, add_entities_mock)
+
+    base_payload = {
+        "unit_of_measurement": "W",
+        "device_class": "power",
+        "state_class": "measurement",
+        "device": {
+            "identifiers": ["azen_ABC123"],
+            "name": "Azen ABC123",
+            "manufacturer": "Azimut",
+        },
+    }
+
+    # Discover pv_power (creates total_solar_power)
+    pv_payload = {
+        **base_payload,
+        "unique_id": "azen_ABC123_pv_power",
+        "name": "PV Power",
+        "state_topic": "azen/ABC123/sensor/pv_power/state",
+    }
+    callbacks["discovery"](pv_payload)
+
+    # Discover mppt_power (total_solar_power already exists)
+    mppt_payload = {
+        **base_payload,
+        "unique_id": "azen_ABC123_mppt_power",
+        "name": "MPPT Power",
+        "state_topic": "azen/ABC123/sensor/mppt_power/state",
+    }
+    callbacks["discovery"](mppt_payload)
+
+    # First discovery creates pv_power + total_solar_power (2 sensors)
+    first_call_sensors = add_entities_mock.call_args_list[1][0][0]
+    assert len(first_call_sensors) == 2
+
+    # Second discovery creates only mppt_power (1 sensor, no duplicate total)
+    second_call_sensors = add_entities_mock.call_args_list[2][0][0]
+    assert len(second_call_sensors) == 1
+    assert second_call_sensors[0].unique_id == "azen_ABC123_mppt_power"
+
+
+async def test_total_solar_power_sums_sources(
+    hass: HomeAssistant,
+    mock_coordinator: MagicMock,
+) -> None:
+    """Test total solar power sensor sums PV and MPPT values."""
+    from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
+
+    total_sensor = AzimutTotalSolarSensor(
+        serial="ABC123",
+        sensor_type="total_solar_power",
+        unit="W",
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        device_info=None,
+    )
+    total_sensor.hass = hass
+
+    # Initially unavailable
+    assert not total_sensor.available
+    assert total_sensor.native_value is None
+
+    # Update pv_power
+    with patch.object(total_sensor, "async_write_ha_state"):
+        total_sensor.update_source("pv_power", 1500.0)
+    assert total_sensor.native_value == 1500.0
+    assert total_sensor.available
+
+    # Update mppt_power
+    with patch.object(total_sensor, "async_write_ha_state"):
+        total_sensor.update_source("mppt_power", 800.5)
+    assert total_sensor.native_value == 2300.5
+
+    # Update pv_power again
+    with patch.object(total_sensor, "async_write_ha_state"):
+        total_sensor.update_source("pv_power", 1200.0)
+    assert total_sensor.native_value == 2000.5
+
+
+async def test_total_solar_energy_created_on_energy_discovery(
+    hass: HomeAssistant,
+    mock_coordinator: MagicMock,
+) -> None:
+    """Test total solar energy sensor is created when energy sources are discovered."""
+    from custom_components.azimut_energy.sensor import async_setup_entry
+
+    entry = MagicMock()
+    entry.data = {CONF_SERIAL: "ABC123"}
+    entry.entry_id = "test_entry"
+
+    hass.data[DOMAIN] = {entry.entry_id: mock_coordinator}
+
+    mqtt_client = MagicMock()
+    mqtt_client.reconnect_count = 0
+    mqtt_client.total_messages_received = 0
+    mock_coordinator.mqtt_client = mqtt_client
+
+    callbacks = {}
+    mock_coordinator.set_discovery_callback.side_effect = lambda cb: callbacks.update(
+        {"discovery": cb}
+    )
+    mock_coordinator.set_state_callback.side_effect = lambda cb: callbacks.update(
+        {"state": cb}
+    )
+    mock_coordinator.set_connection_callback.side_effect = lambda cb: None
+
+    add_entities_mock = MagicMock()
+    await async_setup_entry(hass, entry, add_entities_mock)
+
+    # Discover mppt_energy sensor
+    energy_payload = {
+        "unique_id": "azen_ABC123_mppt_energy",
+        "name": "MPPT Energy",
+        "state_topic": "azen/ABC123/sensor/mppt_energy/state",
+        "unit_of_measurement": "kWh",
+        "device_class": "energy",
+        "state_class": "total_increasing",
+        "device": {
+            "identifiers": ["azen_ABC123"],
+            "name": "Azen ABC123",
+            "manufacturer": "Azimut",
+        },
+    }
+    callbacks["discovery"](energy_payload)
+
+    sensors = add_entities_mock.call_args_list[1][0][0]
+    assert len(sensors) == 2
+    total_sensor = next(s for s in sensors if isinstance(s, AzimutTotalSolarSensor))
+    assert total_sensor.unique_id == "azen_ABC123_total_solar_energy"
+    assert total_sensor.translation_key == "total_solar_energy"
+
+
+async def test_total_solar_updated_via_state_callback(
+    hass: HomeAssistant,
+    mock_coordinator: MagicMock,
+) -> None:
+    """Test total solar sensor is updated when state updates arrive."""
+    from custom_components.azimut_energy.sensor import async_setup_entry
+
+    entry = MagicMock()
+    entry.data = {CONF_SERIAL: "ABC123"}
+    entry.entry_id = "test_entry"
+
+    hass.data[DOMAIN] = {entry.entry_id: mock_coordinator}
+
+    mqtt_client = MagicMock()
+    mqtt_client.reconnect_count = 0
+    mqtt_client.total_messages_received = 0
+    mock_coordinator.mqtt_client = mqtt_client
+
+    callbacks = {}
+    mock_coordinator.set_discovery_callback.side_effect = lambda cb: callbacks.update(
+        {"discovery": cb}
+    )
+    mock_coordinator.set_state_callback.side_effect = lambda cb: callbacks.update(
+        {"state": cb}
+    )
+    mock_coordinator.set_connection_callback.side_effect = lambda cb: None
+
+    add_entities_mock = MagicMock()
+    await async_setup_entry(hass, entry, add_entities_mock)
+
+    # Discover pv_power
+    pv_payload = {
+        "unique_id": "azen_ABC123_pv_power",
+        "name": "PV Power",
+        "state_topic": "azen/ABC123/sensor/pv_power/state",
+        "unit_of_measurement": "W",
+        "device_class": "power",
+        "state_class": "measurement",
+        "device": {
+            "identifiers": ["azen_ABC123"],
+            "name": "Azen ABC123",
+            "manufacturer": "Azimut",
+        },
+    }
+    callbacks["discovery"](pv_payload)
+
+    # Get the sensors
+    created_sensors = add_entities_mock.call_args_list[1][0][0]
+    pv_sensor = next(s for s in created_sensors if isinstance(s, AzimutSensor))
+    total_sensor = next(
+        s for s in created_sensors if isinstance(s, AzimutTotalSolarSensor)
+    )
+    pv_sensor.hass = hass
+    total_sensor.hass = hass
+
+    # Send state update via callback
+    with (
+        patch.object(pv_sensor, "async_write_ha_state"),
+        patch.object(total_sensor, "async_write_ha_state"),
+    ):
+        callbacks["state"]("azen/ABC123/sensor/pv_power/state", 2000.0)
+
+    assert pv_sensor.native_value == 2000.0
+    assert total_sensor.native_value == 2000.0

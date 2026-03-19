@@ -97,16 +97,22 @@
         "name": "Énergie exportée vers le réseau"
       },
       "pv_power": {
-        "name": "Puissance photovoltaïque"
+        "name": "Puissance solaire (couplage AC)"
       },
       "pv_energy": {
-        "name": "Énergie solaire totale"
+        "name": "Énergie solaire (couplage AC)"
       },
       "mppt_power": {
-        "name": "Puissance MPPT"
+        "name": "Puissance solaire (couplage DC / MPPT)"
       },
       "mppt_energy": {
-        "name": "Énergie MPPT totale"
+        "name": "Énergie solaire (couplage DC / MPPT)"
+      },
+      "total_solar_power": {
+        "name": "Puissance solaire totale"
+      },
+      "total_solar_energy": {
+        "name": "Énergie solaire totale"
       },
       "inverter_power": {
         "name": "Puissance de l'onduleur"
