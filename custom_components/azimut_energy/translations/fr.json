@@ -140,6 +140,17 @@
       },
       "sensor_count": {
         "name": "Capteurs découverts"
+      },
+      "arbitrage_mode": {
+        "name": "Mode d'arbitrage"
+      },
+      "arbitrage_power_setpoint": {
+        "name": "Consigne de puissance d'arbitrage"
+      }
+    },
+    "binary_sensor": {
+      "arbitrage_active": {
+        "name": "Arbitrage actif"
       }
     }
   }

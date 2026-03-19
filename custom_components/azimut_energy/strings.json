@@ -140,6 +140,17 @@
       },
       "sensor_count": {
         "name": "Discovered sensors"
+      },
+      "arbitrage_mode": {
+        "name": "Arbitrage mode"
+      },
+      "arbitrage_power_setpoint": {
+        "name": "Arbitrage power setpoint"
+      }
+    },
+    "binary_sensor": {
+      "arbitrage_active": {
+        "name": "Arbitrage active"
       }
     }
   }
