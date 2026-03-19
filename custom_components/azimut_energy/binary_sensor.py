@@ -17,8 +17,8 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_SERIAL, DOMAIN, get_binary_sensor_definitions
-from .types import BinarySensorDefinition
+from .const import CONF_SERIAL, DEFAULT_EXPIRE_AFTER, DOMAIN, get_binary_sensor_definitions
+from .types import BinarySensorDefinition, BinarySensorDiscoveryPayload
 
 if TYPE_CHECKING:
     from . import AzimutMQTTCoordinator
@@ -81,6 +81,34 @@ async def async_setup_entry(
 
     async_add_entities(entities)
 
+    # Track dynamically discovered binary sensors by unique_id
+    created_discovered: dict[str, AzimutDiscoveredBinarySensor] = {}
+
+    @callback
+    def handle_binary_sensor_discovery(payload: BinarySensorDiscoveryPayload) -> None:
+        """Handle binary sensor discovery message and create sensor."""
+        unique_id = payload.get("unique_id")
+        if not unique_id:
+            _LOGGER.warning(
+                "Binary sensor discovery payload missing unique_id: %s", payload
+            )
+            return
+
+        if unique_id in created_discovered:
+            _LOGGER.debug("Binary sensor %s already exists, skipping", unique_id)
+            return
+
+        sensor = AzimutDiscoveredBinarySensor(
+            coordinator=coordinator,
+            payload=payload,
+            serial=serial,
+        )
+        created_discovered[unique_id] = sensor
+        # Also track by state topic for routing state updates
+        created_binary_sensors[sensor.state_topic] = sensor
+        async_add_entities([sensor])
+        _LOGGER.info("Created discovered binary sensor: %s", unique_id)
+
     @callback
     def handle_binary_sensor_state_update(state_topic: str, is_on: bool) -> None:
         """Handle binary sensor state update and route to correct sensor."""
@@ -90,7 +118,8 @@ async def async_setup_entry(
 
         _LOGGER.debug("No binary sensor found for state topic: %s", state_topic)
 
-    # Register callback with coordinator
+    # Register callbacks with coordinator
+    coordinator.set_binary_sensor_discovery_callback(handle_binary_sensor_discovery)
     coordinator.set_binary_sensor_state_callback(handle_binary_sensor_state_update)
 
 
@@ -215,6 +244,122 @@ class AzimutBinarySensor(BinarySensorEntity):
         await super().async_added_to_hass()
 
         # Set up periodic check for expiration
+        if self._expire_after > 0:
+            self._unsub_expire_check = async_track_time_interval(
+                self.hass,
+                self._check_expiration,
+                timedelta(seconds=min(self._expire_after / 2, 60)),
+            )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Run when entity is being removed."""
+        await super().async_will_remove_from_hass()
+
+        if self._unsub_expire_check:
+            self._unsub_expire_check()
+            self._unsub_expire_check = None
+
+    @callback
+    def _check_expiration(self, now: datetime) -> None:
+        """Check if sensor has expired due to no updates."""
+        if self._last_update is None:
+            return
+
+        if (now - self._last_update).total_seconds() > self._expire_after:
+            if self._attr_available:
+                self._attr_available = False
+                self.async_write_ha_state()
+                _LOGGER.debug(
+                    "Binary sensor %s became unavailable (no update for %s seconds)",
+                    self._attr_unique_id,
+                    self._expire_after,
+                )
+
+
+class AzimutDiscoveredBinarySensor(BinarySensorEntity):
+    """Binary sensor entity created from MQTT discovery."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        coordinator: AzimutMQTTCoordinator,
+        payload: BinarySensorDiscoveryPayload,
+        serial: str,
+    ) -> None:
+        """Initialize the binary sensor from discovery payload."""
+        self._coordinator = coordinator
+        self._serial = serial
+
+        # Extract fields from discovery payload
+        self._attr_unique_id = payload.get("unique_id", "")
+        self._state_topic = payload.get("state_topic", "")
+
+        # Extract translation key from unique_id (e.g., "azen_123_arbitrage_active")
+        if self._attr_unique_id:
+            parts = self._attr_unique_id.split("_", 2)
+            if len(parts) >= 3:
+                self._attr_translation_key = parts[2]
+            else:
+                self._attr_name = payload.get("name", "Unknown Binary Sensor")
+        else:
+            self._attr_name = payload.get("name", "Unknown Binary Sensor")
+
+        self._attr_icon = payload.get("icon")
+
+        # Map device class string to enum
+        device_class_str = payload.get("device_class")
+        if device_class_str and device_class_str in BINARY_DEVICE_CLASS_MAP:
+            self._attr_device_class = BINARY_DEVICE_CLASS_MAP[device_class_str]
+
+        # Entity category from discovery payload
+        entity_category_str = payload.get("entity_category")
+        if entity_category_str == "diagnostic":
+            self._attr_entity_category = EntityCategory.DIAGNOSTIC
+        elif entity_category_str == "config":
+            self._attr_entity_category = EntityCategory.CONFIG
+
+        # Expiration for availability
+        self._expire_after = payload.get("expire_after", DEFAULT_EXPIRE_AFTER)
+        self._last_update: datetime | None = None
+        self._unsub_expire_check: Any = None
+
+        # Device info from payload
+        device_info = payload.get("device", {})
+        identifiers = device_info.get("identifiers", [])
+        if identifiers:
+            identifier = (
+                identifiers[0] if isinstance(identifiers[0], str) else identifiers[0]
+            )
+            self._attr_device_info = DeviceInfo(
+                identifiers={(DOMAIN, identifier)},
+                name=device_info.get("name", f"Azen {serial}"),
+                manufacturer=device_info.get("manufacturer", "Azimut"),
+                model=device_info.get("model", "Azen Energy System"),
+                sw_version=device_info.get("sw_version"),
+            )
+
+        # Initial state
+        self._attr_is_on: bool | None = None
+        self._attr_available = False
+
+    @property
+    def state_topic(self) -> str:
+        """Return the state topic for this binary sensor."""
+        return self._state_topic
+
+    @callback
+    def update_state(self, is_on: bool) -> None:
+        """Update the sensor state from MQTT message."""
+        self._attr_is_on = is_on
+        self._attr_available = True
+        self._last_update = dt_util.utcnow()
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self) -> None:
+        """Run when entity is added to hass."""
+        await super().async_added_to_hass()
+
         if self._expire_after > 0:
             self._unsub_expire_check = async_track_time_interval(
                 self.hass,

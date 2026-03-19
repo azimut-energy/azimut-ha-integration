@@ -69,6 +69,18 @@ ICON_VOLTAGE: Final[str] = "mdi:flash"
 ICON_ENERGY: Final[str] = "mdi:lightning-bolt"
 
 
+# Smart charging pilot mode mapping (internal -> display)
+SMART_CHARGING_MODE_MAP: Final[dict[str, str]] = {
+    "STANDBY_CONSUMPTION": "Standby",
+    "STANDBY_INJECTION": "Standby Injection",
+    "CHARGE_ONLY": "Charge Only",
+    "DISCHARGE_ONLY": "Discharge Only",
+    "SELF_CONSUMPTION_UNLOAD": "Self Consumption (Unload)",
+    "SELF_CONSUMPTION_LOAD": "Self Consumption (Load)",
+    "POWER_SETPOINT": "Power Setpoint",
+    "ANTI_TRIP": "Anti-Trip",
+}
+
 # Binary sensor device classes
 BINARY_DEVICE_CLASS_PROBLEM: Final[str] = "problem"
 

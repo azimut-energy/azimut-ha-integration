@@ -60,7 +60,7 @@ class AzimutMQTTClient:
 
         # Callbacks for discovery and state messages
         self._discovery_callback: Callable[[DiscoveryPayload], None] | None = None
-        self._state_callback: Callable[[str, float], None] | None = None
+        self._state_callback: Callable[[str, float | str], None] | None = None
         self._connection_callback: Callable[[bool], None] | None = None
         self._binary_sensor_discovery_callback: (
             Callable[[BinarySensorDiscoveryPayload], None] | None
@@ -101,10 +101,13 @@ class AzimutMQTTClient:
         """Set callback for discovery messages."""
         self._discovery_callback = callback
 
-    def set_state_callback(self, callback: Callable[[str, float], None]) -> None:
+    def set_state_callback(
+        self, callback: Callable[[str, float | str], None]
+    ) -> None:
         """Set callback for state messages.
 
-        Callback receives (state_topic, value).
+        Callback receives (state_topic, value). Value is float for numeric
+        sensors or str for text sensors (e.g., arbitrage_mode).
         """
         self._state_callback = callback
 
@@ -401,7 +404,12 @@ class AzimutMQTTClient:
             _LOGGER.debug("Failed to decode discovery JSON: %s", err)
 
     def _handle_state_message(self, topic: str, payload: str) -> None:
-        """Handle a state message (numeric string, possibly JSON-encoded)."""
+        """Handle a state message (numeric or text string, possibly JSON-encoded).
+
+        Numeric values are passed as float, text values (e.g., pilot mode) as str.
+        """
+        value: float | str
+
         try:
             # Try to parse as JSON first (in case it's a quoted string like "344.00")
             try:
@@ -409,12 +417,19 @@ class AzimutMQTTClient:
                 if isinstance(parsed, (int, float)):
                     value = float(parsed)
                 elif isinstance(parsed, str):
-                    value = float(parsed)
+                    # Try numeric conversion first, fall back to string
+                    try:
+                        value = float(parsed)
+                    except ValueError:
+                        value = parsed
                 else:
                     raise ValueError(f"Unexpected type: {type(parsed)}")
             except json.JSONDecodeError:
-                # Not JSON, try direct float conversion
-                value = float(payload)
+                # Not JSON, try direct float conversion, fall back to string
+                try:
+                    value = float(payload)
+                except ValueError:
+                    value = payload.strip()
 
             _LOGGER.debug("Received state update on %s: %s", topic, value)
 

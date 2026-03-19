@@ -18,7 +18,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_SERIAL, DEFAULT_EXPIRE_AFTER, DOMAIN, ICON_SOLAR
+from .const import SMART_CHARGING_MODE_MAP, CONF_SERIAL, DEFAULT_EXPIRE_AFTER, DOMAIN, ICON_SOLAR
 from .types import DiscoveryPayload
 
 # Sensor IDs that contribute to total solar power/energy
@@ -158,7 +158,7 @@ async def async_setup_entry(
         _LOGGER.info("Created sensor: %s", unique_id)
 
     @callback
-    def handle_state_update(state_topic: str, value: float) -> None:
+    def handle_state_update(state_topic: str, value: float | str) -> None:
         """Handle state update and route to correct sensor."""
         matched_sensor: AzimutSensor | None = None
         for sensor in created_sensors.values():
@@ -279,7 +279,7 @@ class AzimutSensor(SensorEntity):
             )
 
         # Initial state
-        self._attr_native_value: float | None = None
+        self._attr_native_value: float | str | None = None
         self._attr_available = False
 
     @property
@@ -288,8 +288,14 @@ class AzimutSensor(SensorEntity):
         return self._state_topic
 
     @callback
-    def update_value(self, value: float) -> None:
+    def update_value(self, value: float | str) -> None:
         """Update the sensor value from MQTT state message."""
+        # Apply pilot mode mapping for smart_charging_mode sensor
+        if (
+            self._attr_translation_key == "smart_charging_mode"
+            and isinstance(value, str)
+        ):
+            value = SMART_CHARGING_MODE_MAP.get(value, value)
         self._attr_native_value = value
         self._attr_available = True
         self._mqtt_connected = True

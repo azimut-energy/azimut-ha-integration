@@ -141,16 +141,16 @@
       "sensor_count": {
         "name": "Ontdekte sensoren"
       },
-      "arbitrage_mode": {
-        "name": "Arbitragemodus"
+      "smart_charging_mode": {
+        "name": "Slim laden modus"
       },
-      "arbitrage_power_setpoint": {
-        "name": "Arbitrage vermogeninstelpunt"
+      "smart_charging_setpoint": {
+        "name": "Slim laden instelpunt"
       }
     },
     "binary_sensor": {
-      "arbitrage_active": {
-        "name": "Arbitrage actief"
+      "smart_charging_active": {
+        "name": "Slim laden actief"
       }
     }
   }

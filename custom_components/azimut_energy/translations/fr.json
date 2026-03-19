@@ -141,16 +141,16 @@
       "sensor_count": {
         "name": "Capteurs découverts"
       },
-      "arbitrage_mode": {
-        "name": "Mode d'arbitrage"
+      "smart_charging_mode": {
+        "name": "Mode de charge intelligente"
       },
-      "arbitrage_power_setpoint": {
-        "name": "Consigne de puissance d'arbitrage"
+      "smart_charging_setpoint": {
+        "name": "Consigne de charge intelligente"
       }
     },
     "binary_sensor": {
-      "arbitrage_active": {
-        "name": "Arbitrage actif"
+      "smart_charging_active": {
+        "name": "Charge intelligente active"
       }
     }
   }
