@@ -18,8 +18,12 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 
-from .const import CONF_SERIAL, DEFAULT_EXPIRE_AFTER, DOMAIN
+from .const import CONF_SERIAL, DEFAULT_EXPIRE_AFTER, DOMAIN, ICON_SOLAR
 from .types import DiscoveryPayload
+
+# Sensor IDs that contribute to total solar power/energy
+_SOLAR_POWER_SOURCES = {"pv_power", "mppt_power"}
+_SOLAR_ENERGY_SOURCES = {"pv_energy", "mppt_energy"}
 
 if TYPE_CHECKING:
     from . import AzimutMQTTCoordinator
@@ -55,6 +59,9 @@ async def async_setup_entry(
 
     # Track created sensors by unique_id to avoid duplicates
     created_sensors: dict[str, AzimutSensor] = {}
+
+    # Total solar computed sensors (created on first solar source discovery)
+    total_solar_sensors: dict[str, AzimutTotalSolarSensor] = {}
 
     # Create diagnostic sensors
     sensor_count_diag = AzimutDiagnosticSensor(
@@ -107,19 +114,77 @@ async def async_setup_entry(
         # Update sensor count
         sensor_count_diag.increment_sensor_count()
 
-        # Add the entity
-        async_add_entities([sensor])
+        new_entities: list[SensorEntity] = [sensor]
+
+        # Check if this is a solar source sensor -> create total solar sensor
+        sensor_type = ""
+        if unique_id:
+            parts = unique_id.split("_", 2)
+            if len(parts) >= 3:
+                sensor_type = parts[2]
+
+        if sensor_type in _SOLAR_POWER_SOURCES:
+            total_key = "total_solar_power"
+            if total_key not in total_solar_sensors:
+                total_sensor = AzimutTotalSolarSensor(
+                    serial=serial,
+                    sensor_type=total_key,
+                    unit="W",
+                    device_class=SensorDeviceClass.POWER,
+                    state_class=SensorStateClass.MEASUREMENT,
+                    device_info=sensor.device_info,
+                )
+                total_solar_sensors[total_key] = total_sensor
+                new_entities.append(total_sensor)
+                sensor_count_diag.increment_sensor_count()
+
+        if sensor_type in _SOLAR_ENERGY_SOURCES:
+            total_key = "total_solar_energy"
+            if total_key not in total_solar_sensors:
+                total_sensor = AzimutTotalSolarSensor(
+                    serial=serial,
+                    sensor_type=total_key,
+                    unit="kWh",
+                    device_class=SensorDeviceClass.ENERGY,
+                    state_class=SensorStateClass.TOTAL_INCREASING,
+                    device_info=sensor.device_info,
+                )
+                total_solar_sensors[total_key] = total_sensor
+                new_entities.append(total_sensor)
+                sensor_count_diag.increment_sensor_count()
+
+        # Add entities
+        async_add_entities(new_entities)
         _LOGGER.info("Created sensor: %s", unique_id)
 
     @callback
     def handle_state_update(state_topic: str, value: float) -> None:
         """Handle state update and route to correct sensor."""
+        matched_sensor: AzimutSensor | None = None
         for sensor in created_sensors.values():
             if sensor.state_topic == state_topic:
                 sensor.update_value(value)
-                return
+                matched_sensor = sensor
+                break
 
-        _LOGGER.debug("No sensor found for state topic: %s", state_topic)
+        if matched_sensor is None:
+            _LOGGER.debug("No sensor found for state topic: %s", state_topic)
+            return
+
+        # Update total solar sensors if this is a solar source
+        unique_id = matched_sensor.unique_id or ""
+        parts = unique_id.split("_", 2)
+        sensor_type = parts[2] if len(parts) >= 3 else ""
+
+        if sensor_type in _SOLAR_POWER_SOURCES:
+            total = total_solar_sensors.get("total_solar_power")
+            if total:
+                total.update_source(sensor_type, value)
+
+        if sensor_type in _SOLAR_ENERGY_SOURCES:
+            total = total_solar_sensors.get("total_solar_energy")
+            if total:
+                total.update_source(sensor_type, value)
 
     @callback
     def handle_connection_change(connected: bool) -> None:
@@ -359,4 +424,43 @@ class AzimutDiagnosticSensor(SensorEntity):
     @callback
     def _async_update(self, now: datetime) -> None:
         """Update the sensor value."""
+        self.async_write_ha_state()
+
+
+class AzimutTotalSolarSensor(SensorEntity):
+    """Computed sensor that sums PV (AC-coupled) and MPPT (DC-coupled) values."""
+
+    _attr_has_entity_name = True
+
+    def __init__(
+        self,
+        serial: str,
+        sensor_type: str,
+        unit: str,
+        device_class: SensorDeviceClass,
+        state_class: SensorStateClass,
+        device_info: DeviceInfo | None,
+    ) -> None:
+        """Initialize the total solar sensor."""
+        self._attr_unique_id = f"azen_{serial}_{sensor_type}"
+        self._attr_translation_key = sensor_type
+        self._attr_native_unit_of_measurement = unit
+        self._attr_device_class = device_class
+        self._attr_state_class = state_class
+        self._attr_icon = ICON_SOLAR
+        self._attr_native_value: float | None = None
+        self._attr_available = False
+
+        if device_info:
+            self._attr_device_info = device_info
+
+        # Track source values
+        self._source_values: dict[str, float] = {}
+
+    @callback
+    def update_source(self, source_key: str, value: float) -> None:
+        """Update one source value and recompute total."""
+        self._source_values[source_key] = value
+        self._attr_native_value = round(sum(self._source_values.values()), 2)
+        self._attr_available = True
         self.async_write_ha_state()

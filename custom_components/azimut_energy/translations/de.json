@@ -97,16 +97,22 @@
         "name": "Energieexport ins Netz"
       },
       "pv_power": {
-        "name": "PV-Leistung"
+        "name": "Solarleistung (AC-gekoppelt)"
       },
       "pv_energy": {
-        "name": "Solarenergie gesamt"
+        "name": "Solarenergie (AC-gekoppelt)"
       },
       "mppt_power": {
-        "name": "MPPT-Leistung"
+        "name": "Solarleistung (DC-gekoppelt / MPPT)"
       },
       "mppt_energy": {
-        "name": "MPPT-Energie gesamt"
+        "name": "Solarenergie (DC-gekoppelt / MPPT)"
+      },
+      "total_solar_power": {
+        "name": "Gesamte Solarleistung"
+      },
+      "total_solar_energy": {
+        "name": "Gesamte Solarenergie"
       },
       "inverter_power": {
         "name": "Wechselrichterleistung"

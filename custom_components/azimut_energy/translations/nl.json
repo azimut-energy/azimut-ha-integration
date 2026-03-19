@@ -97,16 +97,22 @@
         "name": "Energie-export naar net"
       },
       "pv_power": {
-        "name": "PV-vermogen"
+        "name": "Zonne-vermogen (AC-gekoppeld)"
       },
       "pv_energy": {
-        "name": "Totale zonne-energie"
+        "name": "Zonne-energie (AC-gekoppeld)"
       },
       "mppt_power": {
-        "name": "MPPT-vermogen"
+        "name": "Zonne-vermogen (DC-gekoppeld / MPPT)"
       },
       "mppt_energy": {
-        "name": "Totale MPPT-energie"
+        "name": "Zonne-energie (DC-gekoppeld / MPPT)"
+      },
+      "total_solar_power": {
+        "name": "Totaal zonne-vermogen"
+      },
+      "total_solar_energy": {
+        "name": "Totaal zonne-energie"
       },
       "inverter_power": {
         "name": "Omvormervermogen"
