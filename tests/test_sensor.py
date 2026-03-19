@@ -714,9 +714,7 @@ async def test_total_solar_power_created_on_pv_discovery(
     # Should create pv_power + total_solar_power
     sensors = add_entities_mock.call_args_list[1][0][0]
     assert len(sensors) == 2
-    total_sensor = next(
-        s for s in sensors if isinstance(s, AzimutTotalSolarSensor)
-    )
+    total_sensor = next(s for s in sensors if isinstance(s, AzimutTotalSolarSensor))
     assert total_sensor.unique_id == "azen_ABC123_total_solar_power"
     assert total_sensor.translation_key == "total_solar_power"
 
@@ -876,9 +874,7 @@ async def test_total_solar_energy_created_on_energy_discovery(
 
     sensors = add_entities_mock.call_args_list[1][0][0]
     assert len(sensors) == 2
-    total_sensor = next(
-        s for s in sensors if isinstance(s, AzimutTotalSolarSensor)
-    )
+    total_sensor = next(s for s in sensors if isinstance(s, AzimutTotalSolarSensor))
     assert total_sensor.unique_id == "azen_ABC123_total_solar_energy"
     assert total_sensor.translation_key == "total_solar_energy"
 
