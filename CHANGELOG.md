@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.4.0...azimut-energy-v1.5.0) (2026-10-07)
+
+
+### Features
+
+* support text and enum sensors (smart charging intent) ([#31](https://github.com/azimut-energy/azimut-ha-integration/issues/31)) ([f73f475](https://github.com/azimut-energy/azimut-ha-integration/commit/f73f47552ae905a4f889c5f21902b25bd888abb4))
+
 ## [1.4.0](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.3.1...azimut-energy-v1.4.0) (2026-03-19)
 
 
