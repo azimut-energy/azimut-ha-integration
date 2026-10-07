@@ -19,7 +19,7 @@ from .const import (
     get_republish_command_topic,
     get_state_topic,
 )
-from .types import BinarySensorDiscoveryPayload, DiscoveryPayload
+from .types import BinarySensorDiscoveryPayload, DiscoveryPayload, StateValue
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class AzimutMQTTClient:
 
         # Callbacks for discovery and state messages
         self._discovery_callback: Callable[[DiscoveryPayload], None] | None = None
-        self._state_callback: Callable[[str, float], None] | None = None
+        self._state_callback: Callable[[str, StateValue], None] | None = None
         self._connection_callback: Callable[[bool], None] | None = None
         self._binary_sensor_discovery_callback: (
             Callable[[BinarySensorDiscoveryPayload], None] | None
@@ -101,7 +101,7 @@ class AzimutMQTTClient:
         """Set callback for discovery messages."""
         self._discovery_callback = callback
 
-    def set_state_callback(self, callback: Callable[[str, float], None]) -> None:
+    def set_state_callback(self, callback: Callable[[str, StateValue], None]) -> None:
         """Set callback for state messages.
 
         Callback receives (state_topic, value).
@@ -401,20 +401,35 @@ class AzimutMQTTClient:
             _LOGGER.debug("Failed to decode discovery JSON: %s", err)
 
     def _handle_state_message(self, topic: str, payload: str) -> None:
-        """Handle a state message (numeric string, possibly JSON-encoded)."""
+        """Handle a state message, possibly JSON-encoded.
+
+        Numbers (including numeric strings such as "344.00") are passed on as
+        floats. Any other string is passed on as text: the device publishes
+        text and enum sensors on the same topics, and only the sensor knows
+        which kind it is.
+        """
         try:
-            # Try to parse as JSON first (in case it's a quoted string like "344.00")
             try:
-                parsed = json.loads(payload)
-                if isinstance(parsed, (int, float)):
-                    value = float(parsed)
-                elif isinstance(parsed, str):
-                    value = float(parsed)
-                else:
-                    raise ValueError(f"Unexpected type: {type(parsed)}")
+                parsed: object = json.loads(payload)
             except json.JSONDecodeError:
-                # Not JSON, try direct float conversion
-                value = float(payload)
+                # Not JSON: a bare number or bare text
+                parsed = payload
+
+            value: StateValue
+            if isinstance(parsed, bool):
+                raise ValueError(f"Unexpected type: {type(parsed)}")
+            if isinstance(parsed, (int, float)):
+                value = float(parsed)
+            elif isinstance(parsed, str):
+                text = parsed.strip()
+                if not text:
+                    raise ValueError("Empty state")
+                try:
+                    value = float(text)
+                except ValueError:
+                    value = text
+            else:
+                raise ValueError(f"Unexpected type: {type(parsed)}")
 
             _LOGGER.debug("Received state update on %s: %s", topic, value)
 

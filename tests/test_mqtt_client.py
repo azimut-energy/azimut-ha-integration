@@ -155,19 +155,34 @@ async def test_state_json_encoded_value(mqtt_client: AzimutMQTTClient) -> None:
     assert received_states[0][1] == 1523.45
 
 
-async def test_state_invalid_value(mqtt_client: AzimutMQTTClient) -> None:
-    """Test handling of invalid state values."""
+async def test_state_text_value(mqtt_client: AzimutMQTTClient) -> None:
+    """Non-numeric states are passed on as text, bare or JSON-encoded."""
     received_states = []
 
-    def state_callback(topic: str, value: float) -> None:
+    def state_callback(topic: str, value: float | str) -> None:
         received_states.append((topic, value))
 
     mqtt_client.set_state_callback(state_callback)
 
-    # Invalid value should be ignored
-    mqtt_client._handle_state_message(
-        "azen/ABC123/sensor/battery_soc/state", "not_a_number"
-    )
+    topic = "azen/ABC123/sensor/smart_charging_intent/state"
+    mqtt_client._handle_state_message(topic, "pre_charge")
+    mqtt_client._handle_state_message(topic, '"anti_trip"')
+
+    assert received_states == [(topic, "pre_charge"), (topic, "anti_trip")]
+
+
+async def test_state_invalid_value(mqtt_client: AzimutMQTTClient) -> None:
+    """Empty and non-scalar states are ignored."""
+    received_states = []
+
+    def state_callback(topic: str, value: float | str) -> None:
+        received_states.append((topic, value))
+
+    mqtt_client.set_state_callback(state_callback)
+
+    topic = "azen/ABC123/sensor/battery_soc/state"
+    for payload in ("", '""', "{}", "[1, 2]", "true", "null"):
+        mqtt_client._handle_state_message(topic, payload)
 
     assert len(received_states) == 0
 

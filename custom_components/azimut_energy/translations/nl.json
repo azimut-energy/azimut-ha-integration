@@ -120,6 +120,21 @@
       "consumption_power": {
         "name": "Totaal verbruik"
       },
+      "smart_charging_intent": {
+        "name": "Intentie slim laden",
+        "state": {
+          "none": "Geen plan",
+          "self_consumption": "Eigen verbruik",
+          "pre_charge": "Voorladen",
+          "anti_trip": "Anti-uitschakeling",
+          "standby": "Stand-by",
+          "abr": "Adaptieve reserve",
+          "battery_care": "Batterijzorg"
+        }
+      },
+      "smart_charging_setpoint": {
+        "name": "Setpoint slim laden"
+      },
       "battery_energy_in": {
         "name": "Batterijenergie geladen"
       },

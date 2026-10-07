@@ -27,7 +27,12 @@ class DiscoveryPayload(TypedDict, total=False):
     state_class: str | None
     entity_category: str | None
     expire_after: int
+    options: list[str]
     device: DeviceInfoPayload
+
+
+# A sensor state: a number for measurements, a string for text and enum sensors.
+StateValue = float | str
 
 
 class MQTTStatistics(TypedDict):

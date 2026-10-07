@@ -18,7 +18,7 @@ from .const import (
     MQTT_USE_TLS,
 )
 from .mqtt_client import AzimutMQTTClient
-from .types import BinarySensorDiscoveryPayload, DiscoveryPayload
+from .types import BinarySensorDiscoveryPayload, DiscoveryPayload, StateValue
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ class AzimutMQTTCoordinator:
 
         self._listen_task: asyncio.Task[None] | None = None
         self._discovery_callback: Callable[[DiscoveryPayload], None] | None = None
-        self._state_callback: Callable[[str, float], None] | None = None
+        self._state_callback: Callable[[str, StateValue], None] | None = None
         self._connection_callback: Callable[[bool], None] | None = None
         self._binary_sensor_discovery_callback: (
             Callable[[BinarySensorDiscoveryPayload], None] | None
@@ -119,7 +119,9 @@ class AzimutMQTTCoordinator:
         """Set callback for discovery messages from sensor platform."""
         self._discovery_callback = callback_func
 
-    def set_state_callback(self, callback_func: Callable[[str, float], None]) -> None:
+    def set_state_callback(
+        self, callback_func: Callable[[str, StateValue], None]
+    ) -> None:
         """Set callback for state messages from sensor platform."""
         self._state_callback = callback_func
 
@@ -146,7 +148,7 @@ class AzimutMQTTCoordinator:
             self._discovery_callback(payload)
 
     @callback
-    def _handle_state(self, state_topic: str, value: float) -> None:
+    def _handle_state(self, state_topic: str, value: StateValue) -> None:
         """Handle state message from MQTT client."""
         if self._state_callback:
             self._state_callback(state_topic, value)
