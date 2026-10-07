@@ -51,6 +51,14 @@ def get_binary_sensor_state_topic(serial: str) -> str:
     return f"{STATE_TOPIC_PREFIX}/{serial}/binary_sensor/+/state"
 
 
+def get_planning_topic(serial: str) -> str:
+    """Get the charge planning topic for a device serial.
+
+    The device mirrors the cloud charge plan here, retained, as received.
+    """
+    return f"{STATE_TOPIC_PREFIX}/{serial}/planning"
+
+
 def get_republish_command_topic(serial: str) -> str:
     """Get the republish command topic for a device serial.
 
@@ -58,6 +66,21 @@ def get_republish_command_topic(serial: str) -> str:
     """
     return f"{STATE_TOPIC_PREFIX}/{serial}/command/republish"
 
+
+# Smart charging intents: the cloud plan's reason for each quarter, as the
+# device publishes them in smart_charging_intent (lower-cased Apex intents).
+SMART_CHARGING_INTENTS: Final[tuple[str, ...]] = (
+    "self_consumption",
+    "pre_charge",
+    "anti_trip",
+    "standby",
+    "abr",
+    "battery_care",
+)
+
+# An intent this integration does not know yet is shown as self-consumption,
+# as the device and the Azimut app do.
+DEFAULT_SMART_CHARGING_INTENT: Final[str] = "self_consumption"
 
 # Icon mapping
 ICON_GRID: Final[str] = "mdi:transmission-tower"

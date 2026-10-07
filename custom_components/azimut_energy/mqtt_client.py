@@ -16,10 +16,16 @@ from .const import (
     get_binary_sensor_discovery_topic,
     get_binary_sensor_state_topic,
     get_discovery_topic,
+    get_planning_topic,
     get_republish_command_topic,
     get_state_topic,
 )
-from .types import BinarySensorDiscoveryPayload, DiscoveryPayload, StateValue
+from .types import (
+    BinarySensorDiscoveryPayload,
+    DiscoveryPayload,
+    PlanningPayload,
+    StateValue,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,6 +72,7 @@ class AzimutMQTTClient:
             Callable[[BinarySensorDiscoveryPayload], None] | None
         ) = None
         self._binary_sensor_state_callback: Callable[[str, bool], None] | None = None
+        self._planning_callback: Callable[[PlanningPayload | None], None] | None = None
 
         # TLS context - created lazily to avoid blocking in __init__
         self._tls_context: ssl.SSLContext | None = None
@@ -76,6 +83,7 @@ class AzimutMQTTClient:
         self._binary_sensor_discovery_topic = get_binary_sensor_discovery_topic(serial)
         self._binary_sensor_state_topic = get_binary_sensor_state_topic(serial)
         self._republish_command_topic = get_republish_command_topic(serial)
+        self._planning_topic = get_planning_topic(serial)
 
         # Regex patterns for parsing topics
         # Sensor discovery: homeassistant/sensor/azen_{serial}/{sensor_id}/config
@@ -129,6 +137,16 @@ class AzimutMQTTClient:
         Callback receives (state_topic, is_on).
         """
         self._binary_sensor_state_callback = callback
+
+    def set_planning_callback(
+        self, callback: Callable[[PlanningPayload | None], None]
+    ) -> None:
+        """Set callback for charge planning messages.
+
+        Callback receives the planning, or None when the retained planning was
+        cleared.
+        """
+        self._planning_callback = callback
 
     def _create_tls_context(self) -> ssl.SSLContext | None:
         """Create TLS context if TLS is enabled (synchronous, for executor)."""
@@ -213,6 +231,7 @@ class AzimutMQTTClient:
             await client.subscribe(self._state_topic)
             await client.subscribe(self._binary_sensor_discovery_topic)
             await client.subscribe(self._binary_sensor_state_topic)
+            await client.subscribe(self._planning_topic)
 
             _LOGGER.info(
                 "Connected to MQTT broker at %s:%s for device %s",
@@ -267,6 +286,7 @@ class AzimutMQTTClient:
                     await self._client.subscribe(self._state_topic)
                     await self._client.subscribe(self._binary_sensor_discovery_topic)
                     await self._client.subscribe(self._binary_sensor_state_topic)
+                    await self._client.subscribe(self._planning_topic)
 
                     _LOGGER.info(
                         "MQTT connected to %s:%s for device %s",
@@ -280,6 +300,7 @@ class AzimutMQTTClient:
                         "Subscribed to: %s", self._binary_sensor_discovery_topic
                     )
                     _LOGGER.debug("Subscribed to: %s", self._binary_sensor_state_topic)
+                    _LOGGER.debug("Subscribed to: %s", self._planning_topic)
 
                     self._notify_connected()
                     self._last_message_time = time.monotonic()
@@ -377,6 +398,10 @@ class AzimutMQTTClient:
                     self._handle_binary_sensor_state_message(topic, payload)
                     continue
 
+                if topic == self._planning_topic:
+                    self._handle_planning_message(payload)
+                    continue
+
                 _LOGGER.debug("Unhandled topic: %s", topic)
 
             except Exception as err:
@@ -399,6 +424,29 @@ class AzimutMQTTClient:
 
         except json.JSONDecodeError as err:
             _LOGGER.debug("Failed to decode discovery JSON: %s", err)
+
+    def _handle_planning_message(self, payload: str) -> None:
+        """Handle a charge planning message (JSON, possibly double-encoded)."""
+        if not payload.strip():
+            # Retained planning cleared: nothing is scheduled any more
+            if self._planning_callback:
+                self._planning_callback(None)
+            return
+
+        try:
+            data: object = json.loads(payload)
+            if isinstance(data, str):
+                data = json.loads(data)
+        except json.JSONDecodeError as err:
+            _LOGGER.debug("Failed to decode planning JSON: %s", err)
+            return
+
+        if not isinstance(data, dict):
+            _LOGGER.debug("Unexpected planning payload: %s", type(data))
+            return
+
+        if self._planning_callback:
+            self._planning_callback(data)  # type: ignore[arg-type]
 
     def _handle_state_message(self, topic: str, payload: str) -> None:
         """Handle a state message, possibly JSON-encoded.

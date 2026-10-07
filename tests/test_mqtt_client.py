@@ -48,7 +48,8 @@ async def test_connect_success(mqtt_client: AzimutMQTTClient) -> None:
     # connect() is for validation only, it disconnects after
     assert not mqtt_client.is_connected
     # Discovery + state topics for both sensors and binary sensors
-    assert mock_aiomqtt_client.subscribe.call_count == 4
+    # discovery, state, binary discovery, binary state, planning
+    assert mock_aiomqtt_client.subscribe.call_count == 5
 
 
 async def test_connect_failure(mqtt_client: AzimutMQTTClient) -> None:
@@ -516,3 +517,32 @@ async def test_request_republish_handles_error(mqtt_client: AzimutMQTTClient) ->
 
     # Should not raise an error
     await mqtt_client._request_republish()
+
+
+async def test_planning_callback(mqtt_client: AzimutMQTTClient) -> None:
+    """The mirrored charge plan is decoded, raw or double-encoded."""
+    received: list = []
+    mqtt_client.set_planning_callback(received.append)
+
+    planning = {"asset_id": "ABC123", "setpoints": [{"intent": "PRE_CHARGE"}]}
+    mqtt_client._handle_planning_message(json.dumps(planning))
+    mqtt_client._handle_planning_message(json.dumps(json.dumps(planning)))
+
+    assert received == [planning, planning]
+
+
+async def test_planning_cleared_and_invalid(mqtt_client: AzimutMQTTClient) -> None:
+    """A cleared retained plan empties the calendar; garbage is ignored."""
+    received: list = []
+    mqtt_client.set_planning_callback(received.append)
+
+    mqtt_client._handle_planning_message("")
+    mqtt_client._handle_planning_message("not json")
+    mqtt_client._handle_planning_message("[1, 2]")
+
+    assert received == [None]
+
+
+async def test_planning_topic(mqtt_client: AzimutMQTTClient) -> None:
+    """The plan is read from the device's HA-facing mirror."""
+    assert mqtt_client._planning_topic == "azen/ABC123/planning"

@@ -150,6 +150,20 @@ Sensors are dynamically created based on your device configuration. Common senso
 | Inverter Power | W | Inverter output power |
 | Consumption Power | W | Total home consumption |
 
+### Smart Charging
+
+| Entity | Description |
+|--------|-------------|
+| Smart Charging Intent | Why the battery behaves as it does this quarter: `self_consumption`, `pre_charge`, `anti_trip`, `standby`, `abr`, `battery_care`, or `none` outside the plan |
+| Smart Charging Setpoint | Planned battery power for this quarter (W, positive = charge) |
+| Smart Charging Plan (calendar) | The cloud charge plan: one event per window of the same intent, past and upcoming |
+
+The calendar is the way to read the planned future. Each event's name is the
+translated intent and its description is the intent key (`pre_charge`, ...),
+which is stable across languages: filter automations on the description. Use
+the `calendar.get_events` action to read upcoming windows from a script or
+template. The calendar is replaced every time the device receives a new plan.
+
 ## Energy Dashboard Integration
 
 The Azimut Energy sensors are fully compatible with Home Assistant's Energy Dashboard. To set it up:
@@ -216,6 +230,26 @@ automation:
         data:
           title: "Exporting Power"
           message: "Exporting {{ (states('sensor.azen_504589_grid_power') | float | abs) | round(0) }}W to the grid"
+```
+
+### Before a Pre-charge Window
+
+```yaml
+automation:
+  - alias: "Pre-charge starts in 30 minutes"
+    trigger:
+      - platform: calendar
+        event: start
+        entity_id: calendar.azen_504589_smart_charging_plan
+        offset: "-0:30:0"
+    condition:
+      - condition: template
+        value_template: "{{ trigger.calendar_event.description == 'pre_charge' }}"
+    action:
+      - service: notify.mobile_app
+        data:
+          title: "Pre-charge"
+          message: "The battery charges from the grid from {{ as_timestamp(trigger.calendar_event.start) | timestamp_custom('%H:%M') }} to {{ as_timestamp(trigger.calendar_event.end) | timestamp_custom('%H:%M') }}"
 ```
 
 ### Battery Charging from Solar Only
