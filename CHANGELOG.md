@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.5.0...azimut-energy-v1.6.0) (2026-10-07)
+
+
+### Features
+
+* charge plan calendar (one event per smart charging intent window) ([#33](https://github.com/azimut-energy/azimut-ha-integration/issues/33)) ([97dc6d1](https://github.com/azimut-energy/azimut-ha-integration/commit/97dc6d1e9a5e534a5522bbf02169802c52572f0f))
+
 ## [1.5.0](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.4.0...azimut-energy-v1.5.0) (2026-10-07)
 
 
