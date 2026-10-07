@@ -56,6 +56,11 @@
     }
   },
   "entity": {
+    "calendar": {
+      "smart_charging_plan": {
+        "name": "Planning slim laden"
+      }
+    },
     "sensor": {
       "battery_soc": {
         "name": "Batterijlaadniveau"

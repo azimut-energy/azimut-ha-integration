@@ -18,11 +18,16 @@ from .const import (
     MQTT_USE_TLS,
 )
 from .mqtt_client import AzimutMQTTClient
-from .types import BinarySensorDiscoveryPayload, DiscoveryPayload, StateValue
+from .types import (
+    BinarySensorDiscoveryPayload,
+    DiscoveryPayload,
+    PlanningPayload,
+    StateValue,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["sensor", "binary_sensor"]
+PLATFORMS = ["sensor", "binary_sensor", "calendar"]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -101,6 +106,7 @@ class AzimutMQTTCoordinator:
             Callable[[BinarySensorDiscoveryPayload], None] | None
         ) = None
         self._binary_sensor_state_callback: Callable[[str, bool], None] | None = None
+        self._planning_callback: Callable[[PlanningPayload | None], None] | None = None
 
         # Set up MQTT client callbacks
         self._mqtt_client.set_discovery_callback(self._handle_discovery)
@@ -112,6 +118,7 @@ class AzimutMQTTCoordinator:
         self._mqtt_client.set_binary_sensor_state_callback(
             self._handle_binary_sensor_state
         )
+        self._mqtt_client.set_planning_callback(self._handle_planning)
 
     def set_discovery_callback(
         self, callback_func: Callable[[DiscoveryPayload], None]
@@ -140,6 +147,12 @@ class AzimutMQTTCoordinator:
     ) -> None:
         """Set callback for binary sensor state messages."""
         self._binary_sensor_state_callback = callback_func
+
+    def set_planning_callback(
+        self, callback_func: Callable[[PlanningPayload | None], None]
+    ) -> None:
+        """Set callback for charge planning messages from calendar platform."""
+        self._planning_callback = callback_func
 
     @callback
     def _handle_discovery(self, payload: DiscoveryPayload) -> None:
@@ -172,6 +185,12 @@ class AzimutMQTTCoordinator:
         """Handle binary sensor state message from MQTT client."""
         if self._binary_sensor_state_callback:
             self._binary_sensor_state_callback(state_topic, is_on)
+
+    @callback
+    def _handle_planning(self, payload: PlanningPayload | None) -> None:
+        """Handle charge planning message from MQTT client."""
+        if self._planning_callback:
+            self._planning_callback(payload)
 
     async def async_connect(self) -> bool:
         """Connect to MQTT broker."""

@@ -56,6 +56,11 @@
     }
   },
   "entity": {
+    "calendar": {
+      "smart_charging_plan": {
+        "name": "Smart charging plan"
+      }
+    },
     "sensor": {
       "battery_soc": {
         "name": "Battery state of charge"

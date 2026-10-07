@@ -100,6 +100,24 @@ class DiagnosticsData(TypedDict):
     sensors: SensorsInfo
 
 
+class PlanningSetpoint(TypedDict, total=False):
+    """One quarter of the cloud charge plan."""
+
+    start_time: int  # epoch milliseconds
+    end_time: int  # epoch milliseconds
+    intent: str
+    pilot_mode: str
+    value: float | None
+
+
+class PlanningPayload(TypedDict, total=False):
+    """Cloud charge plan, as mirrored by the device on azen/{serial}/planning."""
+
+    asset_id: str
+    creation_time: int
+    setpoints: list[PlanningSetpoint]
+
+
 class BinarySensorDefinition(TypedDict):
     """Binary sensor definition structure."""
 
