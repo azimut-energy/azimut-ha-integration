@@ -19,7 +19,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 
 from .const import CONF_SERIAL, DEFAULT_EXPIRE_AFTER, DOMAIN, ICON_SOLAR
-from .types import DiscoveryPayload
+from .types import DiscoveryPayload, StateValue
 
 # Sensor IDs that contribute to total solar power/energy
 _SOLAR_POWER_SOURCES = {"pv_power", "mppt_power"}
@@ -38,6 +38,7 @@ DEVICE_CLASS_MAP: dict[str, SensorDeviceClass] = {
     "battery": SensorDeviceClass.BATTERY,
     "current": SensorDeviceClass.CURRENT,
     "temperature": SensorDeviceClass.TEMPERATURE,
+    "enum": SensorDeviceClass.ENUM,
 }
 
 # Map string state classes to SensorStateClass enum
@@ -46,6 +47,13 @@ STATE_CLASS_MAP: dict[str, SensorStateClass] = {
     "total_increasing": SensorStateClass.TOTAL_INCREASING,
     "total": SensorStateClass.TOTAL,
 }
+
+
+def _format_text_state(value: StateValue) -> str:
+    """Return a text state, undoing the float conversion of a numeric string."""
+    if isinstance(value, float):
+        return str(int(value)) if value.is_integer() else str(value)
+    return value
 
 
 async def async_setup_entry(
@@ -158,7 +166,7 @@ async def async_setup_entry(
         _LOGGER.info("Created sensor: %s", unique_id)
 
     @callback
-    def handle_state_update(state_topic: str, value: float) -> None:
+    def handle_state_update(state_topic: str, value: StateValue) -> None:
         """Handle state update and route to correct sensor."""
         matched_sensor: AzimutSensor | None = None
         for sensor in created_sensors.values():
@@ -169,6 +177,10 @@ async def async_setup_entry(
 
         if matched_sensor is None:
             _LOGGER.debug("No sensor found for state topic: %s", state_topic)
+            return
+
+        # The solar totals only sum numbers
+        if not isinstance(value, float):
             return
 
         # Update total solar sensors if this is a solar source
@@ -244,6 +256,11 @@ class AzimutSensor(SensorEntity):
         if device_class_str and device_class_str in DEVICE_CLASS_MAP:
             self._attr_device_class = DEVICE_CLASS_MAP[device_class_str]
 
+        # Enum sensors: Home Assistant rejects a state outside the options
+        self._is_enum = device_class_str == "enum"
+        if self._is_enum:
+            self._attr_options = list(payload.get("options") or [])
+
         # Map state class string to enum
         state_class_str = payload.get("state_class")
         if state_class_str and state_class_str in STATE_CLASS_MAP:
@@ -278,8 +295,14 @@ class AzimutSensor(SensorEntity):
                 sw_version=device_info.get("sw_version"),
             )
 
+        # A sensor with a unit or a state class is numeric; any other sensor
+        # (text or enum) takes a string state.
+        self._is_numeric = not self._is_enum and bool(
+            self._attr_native_unit_of_measurement or state_class_str
+        )
+
         # Initial state
-        self._attr_native_value: float | None = None
+        self._attr_native_value: StateValue | None = None
         self._attr_available = False
 
     @property
@@ -288,8 +311,25 @@ class AzimutSensor(SensorEntity):
         return self._state_topic
 
     @callback
-    def update_value(self, value: float) -> None:
+    def update_value(self, value: StateValue) -> None:
         """Update the sensor value from MQTT state message."""
+        if self._is_numeric:
+            if not isinstance(value, float):
+                _LOGGER.debug(
+                    "Ignoring non-numeric state %r for %s", value, self.unique_id
+                )
+                return
+        else:
+            # Text and enum states are strings, even when they look numeric
+            value = _format_text_state(value)
+            if self._is_enum and value not in self._attr_options:
+                _LOGGER.warning(
+                    "Ignoring state %r for %s: not one of %s",
+                    value,
+                    self.unique_id,
+                    self._attr_options,
+                )
+                return
         self._attr_native_value = value
         self._attr_available = True
         self._mqtt_connected = True

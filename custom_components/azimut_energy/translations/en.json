@@ -120,6 +120,21 @@
       "consumption_power": {
         "name": "Total consumption"
       },
+      "smart_charging_intent": {
+        "name": "Smart charging intent",
+        "state": {
+          "none": "No plan",
+          "self_consumption": "Self-consumption",
+          "pre_charge": "Pre-charge",
+          "anti_trip": "Anti-trip",
+          "standby": "Standby",
+          "abr": "Adaptive reserve",
+          "battery_care": "Battery care"
+        }
+      },
+      "smart_charging_setpoint": {
+        "name": "Smart charging setpoint"
+      },
       "battery_energy_in": {
         "name": "Battery energy charged"
       },

@@ -943,3 +943,150 @@ async def test_total_solar_updated_via_state_callback(
 
     assert pv_sensor.native_value == 2000.0
     assert total_sensor.native_value == 2000.0
+
+
+@pytest.fixture
+def intent_discovery_payload(sample_discovery_payload: dict) -> dict:
+    """Discovery payload of an enum text sensor, as homeassistant-mqtt sends it."""
+    return {
+        "unique_id": "azen_ABC123_smart_charging_intent",
+        "name": "Smart Charging Intent",
+        "state_topic": "azen/ABC123/sensor/smart_charging_intent/state",
+        "device_class": "enum",
+        "options": [
+            "none",
+            "self_consumption",
+            "pre_charge",
+            "anti_trip",
+            "standby",
+            "abr",
+            "battery_care",
+        ],
+        "icon": "mdi:battery-sync",
+        "expire_after": 3600,
+        "device": sample_discovery_payload["device"],
+    }
+
+
+async def test_enum_sensor_from_discovery(
+    hass: HomeAssistant,
+    mock_coordinator: MagicMock,
+    intent_discovery_payload: dict,
+) -> None:
+    """An enum sensor takes its options from discovery and a text state."""
+    from homeassistant.components.sensor import SensorDeviceClass
+
+    sensor = AzimutSensor(
+        coordinator=mock_coordinator,
+        payload=intent_discovery_payload,
+        serial="ABC123",
+    )
+    sensor.hass = hass
+
+    assert sensor.device_class == SensorDeviceClass.ENUM
+    assert sensor.options == intent_discovery_payload["options"]
+    assert sensor.translation_key == "smart_charging_intent"
+
+    with patch.object(sensor, "async_write_ha_state"):
+        sensor.update_value("pre_charge")
+
+    assert sensor.native_value == "pre_charge"
+    assert sensor.available
+
+
+async def test_enum_sensor_ignores_state_outside_options(
+    hass: HomeAssistant,
+    mock_coordinator: MagicMock,
+    intent_discovery_payload: dict,
+) -> None:
+    """Home Assistant rejects an enum state outside the options: never write one."""
+    sensor = AzimutSensor(
+        coordinator=mock_coordinator,
+        payload=intent_discovery_payload,
+        serial="ABC123",
+    )
+    sensor.hass = hass
+
+    with patch.object(sensor, "async_write_ha_state") as write:
+        sensor.update_value("standby")
+        sensor.update_value("discharge")
+        sensor.update_value(42.0)
+
+    assert sensor.native_value == "standby"
+    assert write.call_count == 1
+
+
+async def test_numeric_sensor_ignores_text_state(
+    hass: HomeAssistant,
+    mock_coordinator: MagicMock,
+    sample_discovery_payload: dict,
+) -> None:
+    """A sensor with a unit only takes numbers."""
+    sensor = AzimutSensor(
+        coordinator=mock_coordinator,
+        payload=sample_discovery_payload,
+        serial="ABC123",
+    )
+    sensor.hass = hass
+
+    with patch.object(sensor, "async_write_ha_state") as write:
+        sensor.update_value("pre_charge")
+
+    assert sensor.native_value is None
+    assert not sensor.available
+    write.assert_not_called()
+
+
+async def test_text_state_reaches_enum_sensor_through_setup(
+    hass: HomeAssistant,
+    mock_coordinator: MagicMock,
+    intent_discovery_payload: dict,
+) -> None:
+    """A text state is routed to the enum sensor and skips the solar totals."""
+    from custom_components.azimut_energy.sensor import async_setup_entry
+
+    entry = MagicMock()
+    entry.data = {CONF_SERIAL: "ABC123"}
+    entry.entry_id = "test_entry"
+    hass.data[DOMAIN] = {entry.entry_id: mock_coordinator}
+
+    mqtt_client = MagicMock()
+    mqtt_client.reconnect_count = 0
+    mqtt_client.total_messages_received = 0
+    mock_coordinator.mqtt_client = mqtt_client
+
+    callbacks = {}
+    mock_coordinator.set_discovery_callback.side_effect = lambda cb: callbacks.update(
+        {"discovery": cb}
+    )
+    mock_coordinator.set_state_callback.side_effect = lambda cb: callbacks.update(
+        {"state": cb}
+    )
+    mock_coordinator.set_connection_callback.side_effect = lambda cb: None
+
+    add_entities_mock = MagicMock()
+    await async_setup_entry(hass, entry, add_entities_mock)
+
+    callbacks["discovery"](intent_discovery_payload)
+    sensor = add_entities_mock.call_args_list[-1][0][0][0]
+
+    with patch.object(sensor, "async_write_ha_state"):
+        callbacks["state"](intent_discovery_payload["state_topic"], "anti_trip")
+
+    assert sensor.native_value == "anti_trip"
+
+
+def test_intent_translations_cover_every_option(intent_discovery_payload: dict) -> None:
+    """Every enum option has a label in every language."""
+    import json
+    from pathlib import Path
+
+    base = Path(__file__).parent.parent / "custom_components" / "azimut_energy"
+    files = [base / "strings.json", *sorted((base / "translations").glob("*.json"))]
+    for path in files:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        entry = data["entity"]["sensor"]["smart_charging_intent"]
+        assert entry["name"], path.name
+        assert set(entry["state"]) == set(
+            intent_discovery_payload["options"]
+        ), path.name
