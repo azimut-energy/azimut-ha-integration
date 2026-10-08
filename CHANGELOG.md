@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.6.0...azimut-energy-v1.6.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* match ABR and Battery Care labels to the customer app ([#35](https://github.com/azimut-energy/azimut-ha-integration/issues/35)) ([5c613ae](https://github.com/azimut-energy/azimut-ha-integration/commit/5c613ae6f23cc6e4188a3fed18dde166dc7058d3))
+
 ## [1.6.0](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.5.0...azimut-energy-v1.6.0) (2026-10-07)
 
 
