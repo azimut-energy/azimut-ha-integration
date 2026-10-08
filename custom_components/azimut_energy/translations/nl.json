@@ -133,8 +133,8 @@
           "pre_charge": "Voorladen",
           "anti_trip": "Anti-uitschakeling",
           "standby": "Stand-by",
-          "abr": "Adaptieve reserve",
-          "battery_care": "Batterijzorg"
+          "abr": "Automatische reserve",
+          "battery_care": "Battery Care"
         }
       },
       "smart_charging_setpoint": {
