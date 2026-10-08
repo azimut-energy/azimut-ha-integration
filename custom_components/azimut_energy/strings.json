@@ -133,8 +133,8 @@
           "pre_charge": "Pre-charge",
           "anti_trip": "Anti-trip",
           "standby": "Standby",
-          "abr": "Adaptive reserve",
-          "battery_care": "Battery care"
+          "abr": "Automatic reserve",
+          "battery_care": "Battery Care"
         }
       },
       "smart_charging_setpoint": {
