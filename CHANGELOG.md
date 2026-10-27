@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.2](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.6.1...azimut-energy-v1.6.2) (2026-10-27)
+
+
+### Bug Fixes
+
+* stop leaking a full entry on every reload (uncancelled diagnostic timer) ([#39](https://github.com/azimut-energy/azimut-ha-integration/issues/39)) ([3b21353](https://github.com/azimut-energy/azimut-ha-integration/commit/3b21353910ef88905e9f7212d56783f25c01ba9e))
+
 ## [1.6.1](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.6.0...azimut-energy-v1.6.1) (2026-10-08)
 
 
