@@ -1090,3 +1090,33 @@ def test_intent_translations_cover_every_option(intent_discovery_payload: dict) 
         assert set(entry["state"]) == set(
             intent_discovery_payload["options"]
         ), path.name
+
+
+async def test_diagnostic_sensor_timer_cancelled_on_remove(
+    hass: HomeAssistant,
+    mock_coordinator: MagicMock,
+) -> None:
+    """Test the periodic stats timer is cancelled when the entity is removed."""
+    from custom_components.azimut_energy.sensor import AzimutDiagnosticSensor
+
+    mock_coordinator.mqtt_client = MagicMock(reconnect_count=0)
+    sensor = AzimutDiagnosticSensor(
+        coordinator=mock_coordinator,
+        serial="ABC123",
+        sensor_type="reconnect_count",
+        name="MQTT Reconnect Count",
+        icon="mdi:connection",
+    )
+    sensor.hass = hass
+    sensor.entity_id = "sensor.azen_abc123_reconnect_count"
+    unsub = MagicMock()
+
+    with patch(
+        "custom_components.azimut_energy.sensor.async_track_time_interval",
+        return_value=unsub,
+    ):
+        await sensor.async_added_to_hass()
+
+    unsub.assert_not_called()
+    await sensor.async_remove()
+    unsub.assert_called_once()

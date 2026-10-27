@@ -454,11 +454,15 @@ class AzimutDiagnosticSensor(SensorEntity):
         await super().async_added_to_hass()
 
         # Set up periodic update for MQTT stats
+        # Cancel the timer on removal, otherwise it keeps the entity, the
+        # coordinator and every platform object alive across entry reloads.
         if self._sensor_type in ("reconnect_count", "total_messages"):
-            async_track_time_interval(
-                self.hass,
-                self._async_update,
-                timedelta(seconds=30),
+            self.async_on_remove(
+                async_track_time_interval(
+                    self.hass,
+                    self._async_update,
+                    timedelta(seconds=30),
+                )
             )
 
     @callback
