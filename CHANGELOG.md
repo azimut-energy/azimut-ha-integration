@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.3](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.6.2...azimut-energy-v1.6.3) (2026-10-27)
+
+
+### Bug Fixes
+
+* keep manifest.json version in sync with releases ([#41](https://github.com/azimut-energy/azimut-ha-integration/issues/41)) ([89ea076](https://github.com/azimut-energy/azimut-ha-integration/commit/89ea0760c77a5be76e1fb646407c7ac471a5f208))
+
 ## [1.6.2](https://github.com/azimut-energy/azimut-ha-integration/compare/azimut-energy-v1.6.1...azimut-energy-v1.6.2) (2026-10-27)
 
 
